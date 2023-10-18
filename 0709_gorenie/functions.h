@@ -21,8 +21,8 @@ using namespace std;
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
 
-#define FTOL   RCONST(1.e-12) /* function tolerance */
-#define STOL   RCONST(1.e-12) /* step tolerance     */
+#define FTOL   RCONST(1.e-8) /* function tolerance */
+#define STOL   RCONST(1.e-8) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
 #define PT25   RCONST(0.25)
@@ -43,17 +43,15 @@ extern double k_mol;
 extern double Y_N2;
 extern double Y_max;
 extern double P;
-extern double A;
 extern double R;
-extern double Ea;
 extern double koeff_l;
 extern double l;
 extern long int myiter;
 extern long int nniters;
 extern double eps_x ;
 extern double eps_fr ;
-extern double T_start ;
-extern double T_finish ;
+extern double Tstart ;
+extern double Tfinish ;
 extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
@@ -71,6 +69,7 @@ typedef struct {
     realtype* gradX;
     realtype* Y_tmp;
     realtype* Y_left_bound;
+    realtype* wk_add;
     int Nx;
     int N_m;
     int NEQ;
@@ -120,25 +119,32 @@ void chem_vel(double Tcurr, N_Vector y, N_Vector ydot);
 
 double F_right(IO::ChemkinReader* chemkinReader, double* Yi, double* Yinext,
     double* T, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double M, realtype* x_cells, const int i, N_Vector ydot);
+    double M, realtype* x_cells, const int i, N_Vector ydot, double* wk_add);
 
 double F_rightY(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
     double* T, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double M, realtype* x_cells, const int i, const int k_spec, N_Vector ydot);
+    double M, realtype* x_cells, const int i, const int k_spec, N_Vector ydot, double* wk_add);
 
 void MakeYvectors(double* Yiprev, double* Yi, double* Yinext, double* Y, double* Y_left_bound, int myNx, int i);
 
 static int func_Y(N_Vector u, N_Vector f, void* user_data);
 
-static int funcFinalState(N_Vector u, N_Vector f, void* user_data);
 int Integrate_Y(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
-int FindFinalState(IO::ChemkinReader* chemkinReader_temp, double Tinitial, double* Y_vect);
-
-int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M);
-
-void SetParametres1();
+int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
+    double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
 
 void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double M, int N_x, int number);
+
+int Find_final_state_IDA(IO::ChemkinReader* chemkinReader_temp, double& Tinitial, double* Y_vect);
+
+static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
+
+static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
