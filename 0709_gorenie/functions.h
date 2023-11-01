@@ -148,3 +148,12 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
 static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
 double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
+
+double myget_Hi(int k, double T);
+double myget_Cpi(int k, double T);
+double my_mol_weight(int k);
+
+void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
+double myget_enthalpy(int num_gas_speciens, double* Y, double T);
+double myget_Cp(int num_gas_speciens, double* Y, double T);
+double gauss_func(double A, double mu, double sigma, double x);

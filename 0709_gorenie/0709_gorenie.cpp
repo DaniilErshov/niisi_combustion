@@ -10,7 +10,7 @@ double l = 0.8;
 long int myiter = 0;
 long int nniters;
 double Tstart = 300;
-double Tfinish = 2200;
+double Tfinish = 2380;
 double eps_x = pow(10, -6);
 double eps_fr = pow(10, -6);
 const double kB = 1.3806504e-23;
@@ -21,7 +21,7 @@ const vector<double> M = { 2., 1.0, 32.0, 16.0, 17.0, 33.0, 18.0, 34.0, 28.0 };
 int main()
 {
     init_consts(num_gas_species, num_react);
-    int N_x = 15;
+    int N_x = 20;
     double b = 0.01;
     double M;
     double W, rho, Y_H2, Y_O2;
@@ -32,7 +32,7 @@ int main()
     ofstream fout;
     double X_H2O, X_H2, X_O2, X_N2;
     double tout1 = pow(10, -7);
-    double Tend = 2200;
+    double Tend = 2380;
     int number = 4000;
     int print_value = 13000;
     int cons_flag = 0;
@@ -88,18 +88,21 @@ int main()
         if (x_vect[i] <= koeff_l * l && x_vect[i + 1] > koeff_l * l)
             N_center = i;
     }
+    cout << "N_center = " << N_center << "\n";
     Write_to_file2("detail", fout, x_vect,
         T_vect, Y_vect, M, N_x, 1);
     std::cout << "Chemkin Reader Test\n";
 
-    Find_final_state_IDA(&chemkinReader, T_finish, Yend);
+    //Find_final_state_IDA(&chemkinReader, T_finish, Yend);
 
+    cout << "get_w = " << get_W(Yend) << "\n";
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, T_finish, Ystart, Yend);
 
     Write_to_file2("detai2", fout, x_vect,
         T_vect, Y_vect, M, N_x, 2);
 
-
+    cout << "N_center = " << N_center << "\n";
+    cout << "lambda = " << Lambda_All(&chemkinReader, Ystart, 1800) << "\n";
     integrate_Y_IDA(&chemkinReader, N_x, x_vect,
        T_vect, Y_vect, M, N_center, Ystart);
     //Integrate_Y(&chemkinReader, N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, Y);
