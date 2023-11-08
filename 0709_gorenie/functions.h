@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include "constants.h"
+#include "concentration.h"
+#include "thermodynamic.h"
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,8 +23,8 @@ using namespace std;
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
 
-#define FTOL   RCONST(1.e-8) /* function tolerance */
-#define STOL   RCONST(1.e-8) /* step tolerance     */
+#define FTOL   RCONST(1.e-15) /* function tolerance */
+#define STOL   RCONST(1.e-15) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
 #define PT25   RCONST(0.25)
@@ -44,11 +46,13 @@ extern double Y_N2;
 extern double Y_max;
 extern double P;
 extern double R;
+extern double x_center;
 extern double koeff_l;
 extern double l;
 extern long int myiter;
 extern long int nniters;
 extern double eps_x ;
+extern double eps_func;
 extern double eps_fr ;
 extern double Tstart ;
 extern double Tfinish ;
@@ -56,6 +60,7 @@ extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
 extern const vector<double> M ;
+extern string name_species[9];
 
 typedef struct {
     realtype* x; //cells
@@ -70,6 +75,9 @@ typedef struct {
     realtype* Y_tmp;
     realtype* Y_left_bound;
     realtype* wk_add;
+    realtype* forward;
+    realtype* reverse;
+    realtype* equilib;
     int Nx;
     int N_m;
     int NEQ;
@@ -77,8 +85,8 @@ typedef struct {
     realtype Tl;
     realtype M;
     realtype T_center;
-    N_Vector y;  // molar cons
-    N_Vector ydot; // d(molar cons) / dt
+    realtype* y;  // molar cons
+    realtype* ydot; // d(molar cons) / dt
     void* mykmem;
     IO::ChemkinReader* chemkinReader;
 } *UserData;
@@ -88,44 +96,14 @@ static int num_react = 22;
 
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
-void get_Y(double Y_H2O, double& Y_H2, double& Y_O2, double Y_N2);
-
-double get_W(double* Y);
-
-double get_rho(double* Y, double T);
-
-void make_averageY(double* Yavg, double* Yi, double* Yipred);
-
-void Get_mole_fr(double* X, double* Y);
-
-void Get_molar_cons(double* X, double* Y, double T);
-
-double Cp_all(double T, double* Y);
-
-void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext);
-
-double Lambda_All(IO::ChemkinReader* chemkinReader, double* Y, double T);
-
-double Dij_func(IO::ChemkinReader* chemkinReader, int i, int j, double T, double* Y);
-
-double Dk_func(IO::ChemkinReader* chemkinReader, int i, double T, double* Y, double* X, int N);
-
-double rhoYkWk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT);
-
-double rhoYkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT);
-
-//here send molar_cons
-void chem_vel(double Tcurr, N_Vector y, N_Vector ydot);
-
-double F_right(IO::ChemkinReader* chemkinReader, double* Yi, double* Yinext,
-    double* T, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double M, realtype* x_cells, const int i, N_Vector ydot, double* wk_add);
+double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
+    double M, double* ydot, double* wk_add);
 
 double F_rightY(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
-    double* T, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double M, realtype* x_cells, const int i, const int k_spec, N_Vector ydot, double* wk_add);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
+    double M, const int k_spec, double* ydot, double* wk_add);
 
-void MakeYvectors(double* Yiprev, double* Yi, double* Yinext, double* Y, double* Y_left_bound, int myNx, int i);
 
 static int func_Y(N_Vector u, N_Vector f, void* user_data);
 
@@ -138,22 +116,13 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
 void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double M, int N_x, int number);
 
-int Find_final_state_IDA(IO::ChemkinReader* chemkinReader_temp, double& Tinitial, double* Y_vect);
-
-static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
-
 int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
 static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
+double gauss_func(double A, double mu, double sigma, double x, int k_spec);
 
-double myget_Hi(int k, double T);
-double myget_Cpi(int k, double T);
-double my_mol_weight(int k);
+void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b);
 
-void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
-double myget_enthalpy(int num_gas_speciens, double* Y, double T);
-double myget_Cp(int num_gas_speciens, double* Y, double T);
-double gauss_func(double A, double mu, double sigma, double x);
+double tanh_OH(double A, double mu, double sigma, double x, int k_spec);
