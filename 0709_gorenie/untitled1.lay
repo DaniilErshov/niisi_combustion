@@ -1,5 +1,5 @@
 #!MC 1410
-$!VarSet |LFDSFN1| = '"detai2.dat"'
+$!VarSet |LFDSFN1| = '"detail0.050000.dat"'
 $!VarSet |LFDSVL1| = '"x" "T2" "Y_H2_2" "Y_H_2" "Y_O2_2" "Y_O_2" "Y_OH_2" "Y_HO2_2" "Y_H2O_2" "Y_H2O2_2" "Y_N2_2"'
 $!SetStyleBase Factory
 $!GlobalPaper 
@@ -372,15 +372,15 @@ $!XYLineAxis
   YDetail 1
     {
     RangeMin = 300
-    RangeMax = 2385.4485142333983276
+    RangeMax = 2357.2056999999999789
     GRSpacing = 500
     }
 $!XYLineAxis 
   YDetail 2
     {
-    RangeMin = 0
-    RangeMax = 0.0055776278798934071992
-    GRSpacing = 0.001
+    RangeMin = -1.9308299539000161679E-24
+    RangeMax = 0.010003400034736842708
+    GRSpacing = 0.002
     Title
       {
       Offset = 8

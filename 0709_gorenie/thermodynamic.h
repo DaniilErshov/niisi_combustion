@@ -24,4 +24,4 @@ double myget_Cp(int num_gas_speciens, double* Y, double T);
 
 double Cp_all(double T, double* Y);
 
-double Lambda_All(double* Y, double T);
+double Lambda_All(double* X, double T);

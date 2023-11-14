@@ -284,25 +284,6 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
         //cout << "reverrse " << 21 << " = " << reverse[21] * y[5] * y[6] * pow(10, -3) << "\n\n";
     }
 
-    yprime[0] = -equilib[1] - equilib[2] - equilib[4] - equilib[9] + equilib[18];
-    yprime[1] = -equilib[0] + equilib[4] - equilib[6] - equilib[7] - equilib[8] -
-        equilib[10] - equilib[17] - yprime[0];
-    yprime[2] = -equilib[0] + equilib[5] - equilib[8] - equilib[9] + equilib[11] +
-        equilib[12] + equilib[13] + equilib[14];
-    yprime[3] = equilib[0] - equilib[1] - equilib[3] - 2. * equilib[5] - equilib[6] -
-        equilib[11] - equilib[19];
-    yprime[4] = equilib[0] + equilib[1] - equilib[2] + 2. * equilib[3] + equilib[6] -
-        equilib[7] + 2. * equilib[10] + equilib[11] - equilib[12] + 2. * equilib[15] +
-        2. * equilib[16] + equilib[17] + equilib[19] - equilib[20] - equilib[21];
-    yprime[5] = equilib[8] + equilib[9] - equilib[10] - equilib[11] - equilib[12] -
-        2. * equilib[13] - 2. * equilib[14] + equilib[18] + equilib[19] + equilib[20] +
-        equilib[21];
-    yprime[6] = equilib[2] - equilib[3] + equilib[7] + equilib[12] + equilib[17] +
-        equilib[20] + equilib[21];
-    yprime[7] = equilib[13] + equilib[14] - equilib[15] - equilib[16] - equilib[17] -
-        equilib[18] - equilib[19] - equilib[20] - equilib[21];
-    yprime[8] = 0;
-
     add_toChemVel(wk_add, M, Yi, Yinext, x, xnext, Tcurr, Tinext);
 
     for (int i = 0; i < num_gas_species; i++) {
@@ -333,7 +314,9 @@ double rhoYkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, dou
     double W = get_W(Y);
     double rho = get_rho(Y, T);
     double YkVk = 0;
+    //cout << "T = " << T << "\n";
     for (int j = 0; j < num_gas_species; j++) {
+        //cout << "specie = " << name_species[j] << "\n";
         if (j != k) {
             sum += (my_mol_weight(j))
                 * Dij_func(chemkinReader, k, j, T, Y)
@@ -341,7 +324,7 @@ double rhoYkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, dou
             //cout << "J = " << j << "\n";
             //cout << "Dij = " << Dij_func(chemkinReader, k, j, T, Y) << "\n";
             //cout << "GradX = " << gradX[j] << "\n";
-            //cout << "molw = " << (phyc.mol_weight[j] * k_mol) << "\n\n\n\n";
+            //cout << "molw = " << (my_mol_weight(j)) << "\n\n\n\n";
         }
     }
     //cout << "rhoYkV0k = " << sum * (phyc.mol_weight[k] * k_mol) / pow(W, 2) << "\n";
@@ -365,7 +348,8 @@ double Dij_func(IO::ChemkinReader* chemkinReader, int i, int j, double T, double
     /*cout << "rho = " << rho << "\n";
     cout << "sigmaij = " << sigma_ij << "\n";
     cout << "T_ij = " << T_ij << "\n";*/
-    D_res *= pow(pow(T, 3) / mij, 0.5) / 1.033227 / pow(sigma_ij, 2.) / integ_ij;
+    D_res *= pow(pow(T, 3) / mij, 0.5) / 1. / pow(sigma_ij, 2.) / integ_ij;
+    //1.033227
     return D_res;
 }
 

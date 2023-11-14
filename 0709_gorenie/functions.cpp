@@ -5,20 +5,21 @@ int flag = 0;
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend)
 {
     double h = l / (Nx - 1);
-    x_center = 8 * h;
-    double x_start = x_center -  2 * h;
-    double x_finish = x_center +  h;
+    x_center = 10 * h;
+    double x_start = x_center -  h;
+    double x_finish = x_center + 0.2 * h;
     int dN = (x_finish - x_start) / h;
     cout << "dN = " << dN << "\n";
     double j = 0;
    //M = 5522.86532 *  get_rho(Ystart, Tstart);
-    M = 0.521198704802692;
+    M = 0.123433687432681;
     double Y_H2, Y_O2;
     cout << "M = " << M << "\n";
     double W;
     double sumY = 0;
-    double A_OH = 0.0055;
-    double A_H2O2 = 6.5 * pow(10, -4);
+    double A_OH = 0.008;
+    double A_H2O = 0.22;
+    double A_H2O2 = 15 * pow(10, -5);
     for (int i = 0; i < Nx; i++) {
         x_vect[i] = h * i;
     }
@@ -29,7 +30,8 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
             Y_vect[k * Nx + i] = 0;
     j = 0;
     for (int i = 0; i < Nx; i++) {
-        if (x_vect[i] <= x_start)
+        T_vect[i] = tanh_T(Tstart, Tfinish, x_center + 0.1 * h, 0.025, x_vect[i]);
+        /*if (x_vect[i] <= x_start)
         {
             T_vect[i] = Tstart;
         }
@@ -40,11 +42,11 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
         else {
             T_vect[i] = (Tfinish - Tstart) / (x_finish - x_start) * (x_vect[i] - x_start) + Tstart;
             j++;
-        }
+        }*/
     }
     j = 0;
     x_start += h;
-    x_finish += h;
+    x_finish += 0;
     for (int i = 0; i < Nx; i++)
     {
         sumY = 0;
@@ -70,37 +72,30 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     double Y_OH, Y_H2O2, Y_HO2;
     for (int i = 0; i < Nx; i++)
     {
-        Y_OH = tanh_OH(Yend[4], x_center, 0.04, x_vect[i], 4);
-        Y_H2O2 = gauss_func(A_H2O2, (x_finish - x_start) / 2. + x_start + -1. * h, (x_finish - x_start) / 6., x_vect[i], 7);
-        Y_HO2 = gauss_func(A_H2O2, (x_finish - x_start) / 2. + x_start + -1. * h, (x_finish - x_start) / 6., x_vect[i], 5);
-
-        if (Y_vect[2 + i * num_gas_species] - Y_OH > 0.) {
-            Y_vect[2 + i * num_gas_species] -= Y_OH;
-            Y_vect[4 + i * num_gas_species] = Y_OH;
+        Y_OH = tanh_spec(Yend[OH], x_center + 0.3 * h, 0.02, x_vect[i], 4);
+        Y_H2O2 = gauss_func(A_H2O2, x_center + 2.5 * h, h / 2., x_vect[i], 7);
+        Y_HO2 = gauss_func(A_H2O2, x_center + 2.5 * h, h / 2., x_vect[i], 5);
+        Y_vect[H2O + i * num_gas_species] = tanh_spec(Yend[H2O], x_center + 0.18 * h, 0.05, x_vect[i], 6);
+        Y_vect[H2 + i * num_gas_species] = tanh_spec_minus(Ystart[H2], x_center + 0.2 * h, 0.07, x_vect[i], H2);
+        Y_vect[O2 + i * num_gas_species] = tanh_spec_minus(Ystart[O2], x_center + 0.19 * h, 0.08, x_vect[i], H2);
+        Y_vect[OH + i * num_gas_species] = Y_OH;
+        Y_vect[H2O2 + i * num_gas_species] = Y_H2O2;
+        Y_vect[HO2 + i * num_gas_species] = Y_HO2;
+        Y_vect[N2 + i * num_gas_species] = Ystart[N2];
+        sumY = 0;
+        
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                sumY += Y_vect[k_spec + i * num_gas_species];
         }
-        else if (Y_vect[6 + i * num_gas_species] - Y_OH > 0.) {
-            Y_vect[6 + i * num_gas_species] -= Y_OH;
-            Y_vect[4 + i * num_gas_species] = Y_OH;
+        if (sumY > 1.) {
+                Y_vect[N2 + i * num_gas_species] += 1 - sumY;
         }
-
-        if (Y_vect[2 + i * num_gas_species] - Y_H2O2 > 0.) {
-            Y_vect[2 + i * num_gas_species] -= Y_H2O2;
-            Y_vect[7 + i * num_gas_species] = Y_H2O2;
+        else {
+            Y_vect[H2O + i * num_gas_species] += 1 - sumY;
         }
-        else if (Y_vect[6 + i * num_gas_species] - Y_H2O2 > 0.) {
-            Y_vect[6 + i * num_gas_species] -= Y_H2O2;
-            Y_vect[7 + i * num_gas_species] = Y_H2O2;
-        }
-
-        if (Y_vect[2 + i * num_gas_species] - Y_HO2 > 0.) {
-            Y_vect[2 + i * num_gas_species] -= Y_HO2;
-            Y_vect[5 + i * num_gas_species] = Y_HO2;
-        }
-        else if (Y_vect[6 + i * num_gas_species] - Y_HO2 > 0.) {
-            Y_vect[6 + i * num_gas_species] -= Y_HO2;
-            Y_vect[5 + i * num_gas_species] = Y_HO2;
-        }
-
+        /*Y_vect[H2 + i * num_gas_species] = (1. - sumY) * 1. / 9.;
+        Y_vect[O2 + i * num_gas_species] = (1. - sumY) * 8. / 9.;*/
+        
     }
 
     for (int i = 0; i < Nx - 1; i++) {
@@ -186,11 +181,20 @@ double gauss_func(double A, double mu, double sigma, double x, int k_spec) {
         return A * exp(-pow(x - mu, 2) / 2 / pow(sigma, 2));
 }
 
-double tanh_OH(double A, double mu, double sigma, double x, int k_spec) {
+double tanh_spec(double A, double mu, double sigma, double x, int k_spec) {
 
     return A / 2. * tanh((x - mu) / sigma) + A / 2.;
 }
 
+double tanh_spec_minus(double A, double mu, double sigma, double x, int k_spec) {
+
+    return A / 2. * tanh(-(x - mu) / sigma) + A / 2.;
+}
+
+double tanh_T(double T_start, double T_finish, double mu, double sigma, double x) {
+
+    return (T_finish - T_start) / 2. * tanh((x - mu) / sigma) + (T_finish - T_start) / 2. + T_start;
+}
 double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, 
     double M, double* ydot, double* wk_add)
@@ -200,6 +204,7 @@ double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, dou
     double Cp = Cp_all(T, Yi);
     double rho = get_rho(Yi, T);
     double W = get_W(Yi);
+    Get_mole_fr(Xiprev, Yiprev);
     Get_mole_fr(Xi, Yi);
     Get_mole_fr(Xinext, Yinext);
     get_grad(gradX, Xi, Xinext, x, xnext);
@@ -227,7 +232,13 @@ double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, dou
         cout << "h  = " << myget_Hi(k, T) << "\n";
     }
     cout << "M  slag_diff = " << slag_diff << "\n\n\n\n";*/
-
+    make_averageY(Y_tmp, Xi, Xinext);
+    double lambda_right = Lambda_All(Y_tmp, (Tnext + T) / 2.);
+    /*cout << "T =  " << T << "\n";
+    cout << "lambda = " << lambda_right << "\n";
+    cout << "Cp = " << Cp << "\n";*/
+    make_averageY(Y_tmp, Xi, Xiprev);
+    double lambda_left = Lambda_All(Y_tmp, (T + Tprev) / 2.);
     /*cout << "\n\n\nM  slag_diff = " << slag_diff << "\n";*/
     if (flag == 1) {
         cout << "M  T = " << T << "\n";
@@ -238,8 +249,8 @@ double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, dou
         cout << "M  Cp = " << Cp * M * dTdx << "\n";
     }
     return -(2. / (h + h_left)) *
-        (Lambda_All(Yinext, (Tnext + T) / 2.) * (Tnext - T) / h
-            - Lambda_All(Yiprev, (T + Tprev) / 2.) * (T - Tprev) / h_left)
+        (lambda_right * (Tnext - T) / h
+            - lambda_left * (T - Tprev) / h_left)
         + Cp * M * dTdx + slag_chem + slag_diff;
 
 }
@@ -359,9 +370,11 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
     data->Xinext = new realtype[num_gas_species];
     data->gradX = new realtype[num_gas_species];
     data->Y_tmp = new realtype[num_gas_species];
+
     data->forward = new double[num_react];
     data->reverse = new double[num_react];
     data->equilib = new double[num_react];
+
     data->Y_left_bound = new realtype[num_gas_species];
     data->wk_add = new realtype[num_gas_species];
     data->T = new realtype[N_x];
@@ -386,30 +399,30 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
         data->Y_left_bound[i] = Y_leftb[i];
     }
 
-    double* Yend = new double[num_gas_species];
-    Yend[0] = my_mol_weight(0) * 0.124713
-        ;
-    Yend[1] = my_mol_weight(1) * 0.0314856
-        ;
-    Yend[2] = my_mol_weight(2) * 0.09486124
-        ;
-    Yend[3] = my_mol_weight(3) * 0.004672889
-        ;
-    Yend[4] = my_mol_weight(4) * 0.003471107
-        ;
-    Yend[5] = my_mol_weight(5) * 7.41308E-5
-        ;
-    Yend[6] = my_mol_weight(6) * 0.1357514
-        ;
-    Yend[7] = my_mol_weight(7) * 3.619971E-6
-        ;
-    Yend[8] = my_mol_weight(8) * 0.604967
-        ;
+    //double* Yend = new double[num_gas_species];
+    //Yend[0] = my_mol_weight(0) * 0.124713
+    //    ;
+    //Yend[1] = my_mol_weight(1) * 0.0314856
+    //    ;
+    //Yend[2] = my_mol_weight(2) * 0.09486124
+    //    ;
+    //Yend[3] = my_mol_weight(3) * 0.004672889
+    //    ;
+    //Yend[4] = my_mol_weight(4) * 0.003471107
+    //    ;
+    //Yend[5] = my_mol_weight(5) * 7.41308E-5
+    //    ;
+    //Yend[6] = my_mol_weight(6) * 0.1357514
+    //    ;
+    //Yend[7] = my_mol_weight(7) * 3.619971E-6
+    //    ;
+    //Yend[8] = my_mol_weight(8) * 0.604967
+    //    ;
 
-    for (int i = 0; i < num_gas_species; i++) {
-        Yend[i] /= 22.84775;
-    }
-    Get_molar_cons(data->Xi, Yend, 1206.609);
+    //for (int i = 0; i < num_gas_species; i++) {
+    //    Yend[i] /= 22.84775;
+    //}
+    //Get_molar_cons(data->Xi, Yend, 1206.609);
     for (int i = 0; i < num_gas_species; i++) {
         cout << data->Xi[i] << "\n";
     }
@@ -428,20 +441,20 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
     if (check_retval((void*)cons, "N_VNew_Serial", 0)) return(1);
     
     Ith(cons, 1) = ONE;
-    Ith(avtol, 1) = RCONST(1.0e-6);
+    Ith(avtol, 1) = RCONST(1.0e-4);
     Ith(yy, 1) = M;
     Ith(yp, 1) = 0;
 
     yval = N_VGetArrayPointer(yy);
     ypval = N_VGetArrayPointer(yp);
-    rtol = RCONST(1.0e-8);
+    rtol = RCONST(1.0e-5);
     atval = N_VGetArrayPointer(avtol);
     consval = N_VGetArrayPointer(cons);
 
     for (int i = 1; i < NEQ; i++) {
         consval[i] = 1.0;   /*constraint*/
         yval[i] = Y_vect[num_gas_species + i - 1];
-        atval[i] = RCONST(1.0e-8);
+        atval[i] = RCONST(1.0e-4);
         cout << "i = " << i << "   = " << yval[i] << endl;
         if ((i) % num_gas_species == 0) cout << endl;
     }
@@ -450,7 +463,7 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
     data->M = Ith(yy, 1);
     double rho;
     flag = 1;
-
+    ofstream f_ida;
     for (int i = 1; i < data->Nx - 1; i++) {
         MakeYvectors(data->Yiprev, data->Yi, data->Yinext, yval, data->Y_left_bound, N_x, i);
         Get_molar_cons(data->Xi, data->Yi, T_vect[i]);
@@ -472,6 +485,12 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
 
     }
     //cout << NEQ << " = " << Ith(res_vect, NEQ + 1) << endl;
+    for (int i = 1; i < NEQ; i++) {
+        Yp_vect[num_gas_species + i - 1] = ypval[i];
+    }
+
+    Write_to_file2("A_proizvod_initial", f_ida, x_vect,
+        T_vect, Yp_vect, M, N_x, 2);
 
     /* Call IDACreate and IDAInit to initialize IDA memory */
     mem = IDACreate(ctx);
@@ -487,7 +506,7 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
     retval = IDASetConstraints(mem, cons);
     retval = IDASetUserData(mem, data);
     if (check_retval(&retval, "IDASetUserData", 1)) return(1);
-    retval = IDASetMaxNumSteps(mem, 2000);
+    retval = IDASetMaxNumSteps(mem, 4000);
     /* Create dense SUNMatrix for use in linear solves */
     A = SUNDenseMatrix(NEQ, NEQ, ctx);
     if (check_retval((void*)A, "SUNDenseMatrix", 0)) return(1);
@@ -511,21 +530,23 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
        Break out of loop when NOUT preset output times have been reached. */
 
     iout = 0;
-    double tout1 = pow(10, -7);
+    double tout1 = pow(10, -5);
     tout = tout1;
-    int iend = 500;
+    int iend = 100;
     int number = 100;
     ofstream fout;
     double Y_H2, Y_O2;
     double W, w_dot;
     double sum_Y = 0;
-    ofstream f_ida;
     for (int i = 0; i < num_gas_species * N_x; i++)
         Yp_vect[i] = 0;
 
     while (iout < iend) {
         retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
         cout << "tout = " << tout << "\n";
+        if (tout > 6 * pow(10, -5)) {
+            tout1 = pow(10, -6);
+        }
         for (int i = 1; i < NEQ; i++) {
             Y_vect[num_gas_species + i - 1] = yval[i];
             Yp_vect[num_gas_species + i - 1] = ypval[i];
@@ -535,8 +556,13 @@ int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<doubl
             Y_vect[num_gas_species + i - 1] = Y_vect[i - 1];
         }
         cout << "M = " << yval[0] << "\n";
-        
-        Write_to_file2("detai" + to_string(tout * pow(10, 6)), f_ida, x_vect,
+        //if (tout > 7 * pow(10, -6)) {
+        //    Write_to_file2("detail" + to_string(tout * pow(10, 6)), f_ida, x_vect,
+        //        T_vect, Y_vect, M, N_x, 2);
+        //    Write_to_file2("proizvod" + to_string(tout * pow(10, 6)), f_ida, x_vect,
+        //        T_vect, Yp_vect, M, N_x, 2);
+        //}
+        Write_to_file2("detail" + to_string(tout * pow(10, 6)), f_ida, x_vect,
             T_vect, Y_vect, M, N_x, 2);
         Write_to_file2("proizvod" + to_string(tout * pow(10, 6)), f_ida, x_vect,
             T_vect, Yp_vect, M, N_x, 2);
@@ -603,11 +629,11 @@ static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void
     Get_molar_cons(data->Xiprev, data->Yiprev, T_vect[Ncentr - 1]);
     Get_molar_cons(data->Xinext, data->Yinext, T_vect[Ncentr + 1]);
 
-    //for (int j = 1; j <= num_gas_species; j++) {
-    //    cout << "in IDA Yiprev[j] = " << Yiprev[j - 1] << "\n";
-    //    cout << "in IDA Yi[j] = " << Yi[j - 1] << "\n";
-    //    cout << "in IDA Yinext[j] = " << Yinext[j - 1] << "\n\n";
-    //}
+    /*for (int j = 1; j <= num_gas_species; j++) {
+        cout << "in IDA Yiprev[j] = " << Yiprev[j - 1] << "\n";
+        cout << "in IDA Yi[j] = " << Yi[j - 1] << "\n";
+        cout << "in IDA Yinext[j] = " << Yinext[j - 1] << "\n\n";
+    }*/
     data->M = yval[0];
     chem_vel(data->forward, data->reverse, data->equilib, data->wk_add, data->M, Yi, Yinext, x_cells[Ncentr], x_cells[Ncentr + 1], T_vect[Ncentr], T_vect[Ncentr + 1], data->Xi, data->ydot);
     double rho = get_rho(Yi, T_vect[Ncentr]);

@@ -12,7 +12,7 @@ long int myiter = 0;
 long int nniters;
 double eps_func = pow(10, -8);
 double Tstart = 300;
-double Tfinish = 2380;
+double Tfinish = 2357;
 double eps_x = pow(10, -6);
 double eps_fr = pow(10, -6);
 const double kB = 1.3806504e-23;
@@ -26,7 +26,7 @@ string name_species[9] = { "H2", "H", "O2",
 int main()
 {
     init_consts(num_gas_species, num_react);
-    int N_x = 20;
+    int N_x = 25;
     double b = 0.00001;
     double M;
     double W, rho, Y_H2, Y_O2;
@@ -99,27 +99,69 @@ int main()
    //Find_final_state_IDA(&chemkinReader, T_finish, Yend);
 
    cout << "Cp = " << Cp_all(300, Ystart) << "\n";
-   Yend[0] = my_mol_weight(0) * 0.01457938;
-   Yend[1] = my_mol_weight(1) * 0.002126551;
-   Yend[2] = my_mol_weight(2) * 0.007320253
-       ;
-   Yend[3] = my_mol_weight(3) * 7.984792E-4
-       ;
-   Yend[4] = my_mol_weight(4) * 0.008885982
-       ;
-   Yend[5] = my_mol_weight(5) * 1.484319E-6
-       ;
-   Yend[6] = my_mol_weight(6) * 0.3197389
-       ;
-   Yend[7] = my_mol_weight(7) * 1.874924E-7
-       ;
-   Yend[8] = my_mol_weight(8) * 0.6465487
-       ;
-   for (int i = 0; i < num_gas_species; i++) {
-       Yend[i] /= 24.30197;
-   }
+   //Yend[0] = my_mol_weight(0) * 0.01457938;
+   //Yend[1] = my_mol_weight(1) * 0.002126551;
+   //Yend[2] = my_mol_weight(2) * 0.007320253
+   //    ;
+   //Yend[3] = my_mol_weight(3) * 7.984792E-4
+   //    ;
+   //Yend[4] = my_mol_weight(4) * 0.008885982
+   //    ;
+   //Yend[5] = my_mol_weight(5) * 1.484319E-6
+   //    ;
+   //Yend[6] = my_mol_weight(6) * 0.3197389
+   //    ;
+   //Yend[7] = my_mol_weight(7) * 1.874924E-7
+   //    ;
+   //Yend[8] = my_mol_weight(8) * 0.6465487
+   //    ;
+   //for (int i = 0; i < num_gas_species; i++) {
+   //    Yend[i] /= 24.30197;
+   //}
+   Yend[H2] = 0.00119584;
+   Yend[H] = 7.25484e-05;
+   Yend[O2] = 0.00710046;
+   Yend[O] = 0.00038046;
+   Yend[OH] = 0.00549423;
+   Yend[HO2] = 1.65194e-06;
+   Yend[H2O] = 0.240568;
+   Yend[H2O2] = 1.81769e-07;
+   Yend[N2] = 0.745187;
+   //Yend[0] = 0.04252821
+   //    ;
+   //Yend[1] = 0.03886508
+   //    ;
+   //Yend[2] = 0.02825736
 
-   cout << "lambda = " << Lambda_All(Yend, 2357.545) << "\n";
+   //    ;
+   //Yend[3] = 0.009236109
+   //    ;
+   //Yend[4] = 0.01344398
+
+   //    ;
+   //Yend[5] = 1.276131E-5
+
+   //    ;
+   //Yend[6] = 0.2503474
+   //    ;
+   //Yend[7] = 5.529905E-6
+   //    ;
+   //Yend[8] = 0.6173036
+   //    ;
+   //cout << "lambda = " << Lambda_All(Yend, 1681.869);
+  /* cout << "lambda = " << Lambda_All(Yend, 2357.545);
+   ofstream f_lambda;
+   f_lambda.open("lambda_H2.dat");
+   f_lambda << "TITLE=\"" << "Graphics" << "\"" << endl;
+   f_lambda << R"(VARIABLES= "T", "lambda_H2", "lambda_OH", "lambda_H2O", "lambda_N2")";
+   double T_check = 500;
+   double dT_check = 25;
+   while (T_check < 3000) {
+       f_lambda << T_check << " " << Lambda_H2(T_check) <<  " " << Lambda_OH(T_check)
+           << " " << Lambda_H2O(T_check) <<  " " << Lambda_N2(T_check) << "\n";
+       T_check += dT_check;
+   }
+   f_lambda.close();*/
   /* double T_check = 500;
    double dT_check = 25;
    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
@@ -138,26 +180,26 @@ int main()
        fout.close();
     }*/
 
-   cout << "dij = " << Dij_func(&chemkinReader, 0, 1, 300, Ystart) << "\n";
-   double Dcheck = 0;
+   //cout << "dij = " << Dij_func(&chemkinReader, 0, 1, 300, Ystart) << "\n";
+   //double Dcheck = 0;
 
 
-   Get_mole_fr(X, Ystart);
-   int my_spec = 6;
+   //Get_mole_fr(X, Yend);
+   //int my_spec = 0;
 
-   for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-       if (my_spec != k_spec) {
-            Dcheck += X[k_spec] / Dij_func(&chemkinReader, my_spec, k_spec, 300, Ystart);
-       }
-       
-   }
-   cout << "Dkm = " << (1 - Ystart[my_spec]) / Dcheck << "\n";
+   //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+   //    if (my_spec != k_spec) {
+   //         Dcheck += X[k_spec] / Dij_func(&chemkinReader, my_spec, k_spec, 2357.545, Yend);
+   //    }
+   //    
+   //}
+   //cout << "Dkm = " << (1 - Yend[my_spec]) / Dcheck << "\n";
 
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, T_finish, Ystart, Yend);
     //Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
     //Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
 
-    Write_to_file2("detai2", fout, x_vect,
+    Write_to_file2("A_initial", fout, x_vect,
         T_vect, Y_vect, M, N_x, 2);
 
     cout << "N_center = " << N_center << "\n";

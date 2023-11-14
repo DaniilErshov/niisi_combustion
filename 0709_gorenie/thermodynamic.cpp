@@ -1,48 +1,50 @@
 #include "thermodynamic.h"
 
+
 double Lambda_H2(double T) {
-    double res = (1.6695115531878237 - 1.76734716 * log(T) + 0.26422876 * pow(log(T), 2)
-        - 0.00857019 * pow(log(T), 3));
+    double res = (0.7952908032065458 - 1.7543618 * log(T) + 0.29620426 * pow(log(T), 2)
+        - 0.01106313 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_H(double T) {
-    double res = (-0.2054145803692773 - 0.98198603 * log(T) + 0.19866012 * pow(log(T), 2)
-        - 0.00836508 * pow(log(T), 3));
+    double res = (-10.794768716134467 + 2.97505023 * log(T) - 0.30072807  * pow(log(T), 2)
+        + 0.01292112 * pow(log(T), 3));
     return  exp(res);
-}
+} 
 double Lambda_O2(double T) {
-    double res = (-2.4941624666413817 - 1.09865955 * log(T) + 0.21931218 * pow(log(T), 2)
-        - 0.00881651 * pow(log(T), 3));
+    double res = (-13.972838830946268 + 3.14253445 * log(T) - 0.31033452 * pow(log(T), 2)
+        + 0.01354363 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_O(double T) {
-    double res = (-1.198976718323006 - 1.24807805 * log(T) + 0.22249078 * pow(log(T), 2)
-        - 0.00891554 * pow(log(T), 3));
+    double res = (-10.510253685474222 + 2.23006088 * log(T) - 0.217143 * pow(log(T), 2)
+        + 0.00988099 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_OH(double T) {
-    double res = (2.8044872137363575 - 2.886673 * log(T) + 0.44357776 * pow(log(T), 2)
-        - 0.01793352 * pow(log(T), 3));
+    double res = (4.29513792933524 - 3.97497223 * log(T) + 0.64269133 * pow(log(T), 2)
+        - 0.02873229 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_HO2(double T) {
-    double res = (0.31835676143360025 - 2.45120819 * log(T) + 0.43651758 * pow(log(T), 2)
-        - 0.01962151 * pow(log(T), 3));
+    double res = (-13.413518582354056 + 2.671689 * log(T) - 0.20882322 * pow(log(T), 2)
+        + 0.00782351 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_H2O(double T) {
-    double res = (7.8814997570835645 - 6.24408052 * log(T) + 1.0331172 * pow(log(T), 2)
-        - 0.04869067 * pow(log(T), 3));
+    double res = (16.566957613965787 - 11.01054783 * log(T) + 1.82299069 * pow(log(T), 2)
+        - 0.0899335 * pow(log(T), 3));
     return  exp(res);
 }
 double Lambda_H2O2(double T) {
-    double res = (0.5250328719150514 - 2.57886269 * log(T) + 0.47538552 * pow(log(T), 2)
-        - 0.02237828 * pow(log(T), 3));
+    double res = (-10.106230046345894 + 1.12094883 * log(T) + 0.04337092 * pow(log(T), 2)
+        - 0.00542249 * pow(log(T), 3));
     return  exp(res);
 }
+
 double Lambda_N2(double T) {
-    double res = (2.2276710981921695 - 3.23746048 * log(T) + 0.53623682 * pow(log(T), 2)
-        - 0.02439004 * pow(log(T), 3));
+    double res = (0.8952973124090282 - 3.25428557 * log(T) + 0.60089845 * pow(log(T), 2)
+        - 0.02961411 * pow(log(T), 3));
     return  exp(res);
 }
 
@@ -72,10 +74,8 @@ double Cp_all(double T, double* Y)
     return cp_tmp;
 }
 
-double Lambda_All(double* Y, double T)
+double Lambda_All(double* X, double T)
 {
-    double* X = new double[num_gas_species];
-    Get_mole_fr(X, Y);
     double res = Lambda_H2(T) * X[0] +
         Lambda_H(T) * X[1] +
         Lambda_O2(T) * X[2] +
@@ -95,6 +95,5 @@ double Lambda_All(double* Y, double T)
         X[6] / Lambda_H2O(T) +
         X[7] / Lambda_H2O2(T) +
         X[8] / Lambda_N2(T));
-
     return res / 2. / 100.;
 }

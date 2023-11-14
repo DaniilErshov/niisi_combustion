@@ -33,6 +33,16 @@ using namespace std;
 #define ONEPT5 RCONST(1.5)
 #define TWO    RCONST(2.0)
 
+#define H2 0
+#define H 1
+#define O2 2
+#define O 3
+#define OH 4
+#define HO2 5
+#define H2O 6
+#define H2O2 7
+#define N2 8
+
 #define Ith(v,i)    NV_Ith_S(v,i-1)
 #define IJth(A,i,j) SM_ELEMENT_D(A,i-1,j-1)
 
@@ -125,4 +135,6 @@ double gauss_func(double A, double mu, double sigma, double x, int k_spec);
 
 void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b);
 
-double tanh_OH(double A, double mu, double sigma, double x, int k_spec);
+double tanh_spec(double A, double mu, double sigma, double x, int k_spec);
+double tanh_T(double T_start, double T_finish, double mu, double sigma, double x);
+double tanh_spec_minus(double A, double mu, double sigma, double x, int k_spec);
