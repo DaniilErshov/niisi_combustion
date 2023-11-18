@@ -50,21 +50,27 @@ double get_W(double* Y)
     return 1. / W;
 }
 
-void MakeYvectors(double* Yiprev, double* Yi, double* Yinext, double* Y, double* Y_left_bound, int myNx, int i) {
+void MakeYvectors(IO::ChemkinReader* chemkinReader_temp, double* x,
+    double* Yiprev, double* Yi, double* Yinext,
+    double* Y, double* Y_left_bound, int myNx, int i, double Tl, double M) {
     //cout << "i = " << i << "\n";
-    for (int j = 1; j <= num_gas_species; j++) {
+    for (int j = 0; j < num_gas_species; j++) {
 
-        Yi[j - 1] = Y[j + (i - 1) * num_gas_species];
+        Yi[j] = Y[j + (i - 1) * num_gas_species];
 
-        if (i == 1) Yiprev[j - 1] = Y_left_bound[j - 1];
-        else Yiprev[j - 1] = Y[j + (i - 2) * num_gas_species];
-        /*cout << "k = " << name_species[j - 1] << "\n";
-        cout << " Yiprev[j] = " << Yiprev[j - 1] << "\n";
-        cout << " Yi[j] = " << Yi[j - 1] << "\n";*/
+        if (i == 1) { 
+            FindBoundary(chemkinReader_temp, Y_left_bound, Yiprev, Yi, Tl,
+                x[i - 1], x[i], M);
+            //Yiprev[j] = Y_left_bound[j];
+        }
+        else Yiprev[j] = Y[j + (i - 2) * num_gas_species];
+        //cout << "k = " << name_species[j - 1] << "\n";
+        //cout << " Yiprev[j] = " << Yiprev[j - 1] << "\n";
+        //cout << " Yi[j] = " << Yi[j - 1] << "\n";
 
-        if (i == myNx - 2) Yinext[j - 1] = Yi[j - 1];
-        else  Yinext[j - 1] = Y[j + (i)*num_gas_species];
-        /*cout << " Yinext[j] = " << Yinext[j - 1] << "\n\n";*/
+        if (i == myNx - 2) Yinext[j] = Yi[j];
+        else  Yinext[j] = Y[j + (i) * num_gas_species];
+        //cout << " Yinext[j] = " << Yinext[j - 1] << "\n\n";
     }
 }
 
@@ -140,7 +146,7 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
         if (k == 1) l = 15;
         if (k == 2) l = 16;
 
-        if (Pr_f[k] == 0) forward[l] = k_inf_f[k];
+        if (Pr_f[k] <= 0) forward[l] = k_inf_f[k];
         else {
             logF_core_f = pow((log10(Pr_f[k]) + c[k]) / (m[k] - d * (log10(Pr_f[k]) + c[k])), 2);
             logF_f = pow(1.0 + logF_core_f, -1) * log10(chec.Fcent[l]);
@@ -148,13 +154,15 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
             forward[l] = k_inf_f[k] * (Pr_f[k] / (1 + Pr_f[k])) * chec.F_f[l];
         }
 
-        if (Pr_r[k] == 0) reverse[l] = k_inf_r[k];
+        if (Pr_r[k] <= 0) reverse[l] = k_inf_r[k];
         else {
             logF_core_r = pow((log10(Pr_r[k]) + c[k]) / (m[k] - d * (log10(Pr_r[k]) + c[k])), 2);
             logF_r = pow(1.0 + logF_core_r, -1) * log10(chec.Fcent[l]);
             chec.F_r[l] = pow(10, logF_r);
             reverse[l] = k_inf_r[k] * (Pr_r[k] / (1 + Pr_r[k])) * chec.F_r[l];
         }
+        //forward[l] = k_inf_f[k];
+        //reverse[l] = k_inf_r[k];
     }
 
     equilib[0] = forward[0] * y[1] * y[2] - reverse[0] * y[3] * y[4];
@@ -284,52 +292,30 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
         //cout << "reverrse " << 21 << " = " << reverse[21] * y[5] * y[6] * pow(10, -3) << "\n\n";
     }
 
-    add_toChemVel(wk_add, M, Yi, Yinext, x, xnext, Tcurr, Tinext);
+    //add_toChemVel(wk_add, M, Yi, Yinext, x, xnext, Tcurr, Tinext);
 
     for (int i = 0; i < num_gas_species; i++) {
         yprime[i] *= pow(10, -3);
-        yprime[i] += wk_add[i];
+        //cout << "velo = " << name_species[i] << " = " << yprime[i] << "\n";
+        //yprime[i] += wk_add[i];
     }
 }
 
-double rhoYkWk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT) {
-
-    //std::cout << std::endl << std::endl << std::endl << chemkinReader->species()[i].name() << std::endl;
-    double sigma_i = chemkinReader->species()[k].transport().getCollisionDiameter() / Angstroem__;
-    //cout << "sigma_i = " << sigma_i << endl;
-    double Ti = kB * T / (chemkinReader->species()[k].transport().getPotentialWellDepth());
-    //cout << "Ti = " << Ti << endl;
-    double integr_i = 1.157 / pow(Ti, 0.1472);
-    //cout << "integr_i = " << integr_i << endl;
-    double lambda_spec = 8330. * pow(T / M[k], 0.5) / pow(sigma_i, 2.) / integr_i * pow(10, -7);
-    double rho = P * get_W(Y) / R / T;
-    double Dk = lambda_spec / rho / (get_Cpi(k, T));
-    //cout << "lambda_spec = " << lambda_spec << "\n";
-    cout << "from Wk Dk = " << Dk << "\n";
-    return Dk * (gradT / T);
-}
-
-double rhoYkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT) {
+double YkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double* Xi) {
     double sum = 0.;
     double W = get_W(Y);
     double rho = get_rho(Y, T);
     double YkVk = 0;
-    //cout << "T = " << T << "\n";
+    double Dkm = 0;
     for (int j = 0; j < num_gas_species; j++) {
-        //cout << "specie = " << name_species[j] << "\n";
         if (j != k) {
-            sum += (my_mol_weight(j))
-                * Dij_func(chemkinReader, k, j, T, Y)
-                * gradX[j];
-            //cout << "J = " << j << "\n";
-            //cout << "Dij = " << Dij_func(chemkinReader, k, j, T, Y) << "\n";
-            //cout << "GradX = " << gradX[j] << "\n";
-            //cout << "molw = " << (my_mol_weight(j)) << "\n\n\n\n";
+            sum += Xi[j]
+                / Dij_func(chemkinReader, k, j, T, Y);
         }
     }
-    //cout << "rhoYkV0k = " << sum * (phyc.mol_weight[k] * k_mol) / pow(W, 2) << "\n";
-    //cout << "rhoYkW0k = " << rhoYkWk(chemkinReader, k, T, Y, gradX, gradT) << "\n";
-    return rho * sum * (my_mol_weight(k)) / pow(W, 2) + 0;
+    Dkm = (1. - Y[k]) / sum;
+    //cout << "Dkm for " << name_species[k] << " = " << Dkm << "\n";
+    return  -my_mol_weight(k) / W * Dkm * gradX[k];
 }
 
 double Dij_func(IO::ChemkinReader* chemkinReader, int i, int j, double T, double* Y)

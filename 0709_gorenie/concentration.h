@@ -16,7 +16,9 @@ void get_Y(double Y_H2O, double& Y_H2, double& Y_O2, double Y_N2);
 
 double get_W(double* Y);
 
-void MakeYvectors(double* Yiprev, double* Yi, double* Yinext, double* Y, double* Y_left_bound, int myNx, int i);
+void MakeYvectors(IO::ChemkinReader* chemkinReader_temp, double* x,
+    double* Yiprev, double* Yi, double* Yinext,
+    double* Y, double* Y_left_bound, int myNx, int i, double Tl, double M);
 
 double get_rho(double* Y, double T);
 
@@ -28,9 +30,7 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
 
 void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
 
-double rhoYkWk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT);
-
-double rhoYkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double gradT);
+double YkVk(IO::ChemkinReader* chemkinReader, int k, double T, double* Y, double* gradX, double* Xi);
 
 double Dij_func(IO::ChemkinReader* chemkinReader, int i, int j, double T, double* Y);
 

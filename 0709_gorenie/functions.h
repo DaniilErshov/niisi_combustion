@@ -22,6 +22,7 @@ using namespace std;
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
+#include <cvode/cvode.h>   
 
 #define FTOL   RCONST(1.e-15) /* function tolerance */
 #define STOL   RCONST(1.e-15) /* step tolerance     */
@@ -71,6 +72,8 @@ extern const double Angstroem__ ;
 extern const double santimetr ;
 extern const vector<double> M ;
 extern string name_species[9];
+extern SUNContext sunctx;
+extern void* cvode_mem;
 
 typedef struct {
     realtype* x; //cells
@@ -82,12 +85,14 @@ typedef struct {
     realtype* Xi;
     realtype* Xinext;
     realtype* gradX;
+    realtype* X_tmp;
     realtype* Y_tmp;
     realtype* Y_left_bound;
     realtype* wk_add;
     realtype* forward;
     realtype* reverse;
     realtype* equilib;
+    SUNContext sunctx;
     int Nx;
     int N_m;
     int NEQ;
@@ -108,12 +113,12 @@ static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
 double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double M, double* ydot, double* wk_add);
+    double* X_tmp, double M, double* ydot, double* wk_add);
 
 double F_rightY(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
+    double* X_tmp,
     double M, const int k_spec, double* ydot, double* wk_add);
-
 
 static int func_Y(N_Vector u, N_Vector f, void* user_data);
 
@@ -138,3 +143,17 @@ void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x,
 double tanh_spec(double A, double mu, double sigma, double x, int k_spec);
 double tanh_T(double T_start, double T_finish, double mu, double sigma, double x);
 double tanh_spec_minus(double A, double mu, double sigma, double x, int k_spec);
+
+void Init_Data(UserData data, int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, IO::ChemkinReader* chemkinReader_temp, int NEQ,
+    int N_center, double* Y_leftb);
+
+void integrate_Y_CVODE(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
+
+static int func_Y_CVODE(realtype t, N_Vector y, N_Vector ydot, void* user_data);
+
+int FindBoundary(IO::ChemkinReader* chemkinReader_temp, double* Y_leftbound_inlet, double* Y_leftbound, double* Yinext, double Tl,
+    double xi, double xinext, double M);
+
+static int left_bound_solve(N_Vector u, N_Vector f, void* user_data);

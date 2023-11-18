@@ -1,5 +1,5 @@
 #!MC 1410
-$!VarSet |LFDSFN1| = '"proizvod0.270000.dat"'
+$!VarSet |LFDSFN1| = '"proizvod35.000000.dat"'
 $!VarSet |LFDSVL1| = '"x" "T2" "Y_H2_2" "Y_H_2" "Y_O2_2" "Y_O_2" "Y_OH_2" "Y_HO2_2" "Y_H2O_2" "Y_H2O2_2" "Y_N2_2"'
 $!SetStyleBase Factory
 $!GlobalPaper 
@@ -65,7 +65,7 @@ $!FrameName  = 'Frame 001'
 $!GlobalTime 
   SolutionTime = 0
 $!DeleteLineMaps 
-$!ActiveLineMaps  =  [1-10]
+$!ActiveLineMaps  =  [1-7,9-10]
 $!GlobalLinePlot 
   DataLabels
     {
@@ -76,8 +76,8 @@ $!GlobalLinePlot
     Show = Yes
     XYPos
       {
-      X = 46.317
-      Y = 89.597
+      X = 44.061
+      Y = 95.836
       }
     }
 $!LineMap  [1]
@@ -361,31 +361,38 @@ $!LineMap  [10]
     }
 $!XYLineAxis 
   DepXToYRatio = 1
+  ViewportPosition
+    {
+    X1 = 13.298
+    X2 = 88.298
+    }
 $!XYLineAxis 
   XDetail 1
     {
     RangeMin = 0
-    RangeMax = 0.60006002384424206308
-    GRSpacing = 0.2
+    RangeMax = 0.30003001192212103154
+    GRSpacing = 0.05
     }
 $!XYLineAxis 
   YDetail 1
     {
     RangeMin = 300
-    RangeMax = 2357.2056999999999789
+    RangeMax = 2385.6084423339843852
     GRSpacing = 500
     }
 $!XYLineAxis 
   YDetail 2
     {
-    RangeMin = -3248.050048828125
-    RangeMax = 5017.78646193847635
-    GRSpacing = 2000
+    RangeMin = -1370.93994140625
+    RangeMax = 4498.9467932617189945
+    GRSpacing = 500
     AxisLine
       {
       AxisAlignment = WithGridMax
       }
     }
+$!LinePlotLayers 
+  ShowSymbols = Yes
 $!FrameControl ActivateByNumber
   Frame = 1
 $!SetStyleBase Config

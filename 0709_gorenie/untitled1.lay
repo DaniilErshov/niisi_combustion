@@ -1,5 +1,5 @@
 #!MC 1410
-$!VarSet |LFDSFN1| = '"detail0.050000.dat"'
+$!VarSet |LFDSFN1| = '"detail61.000000.dat"'
 $!VarSet |LFDSVL1| = '"x" "T2" "Y_H2_2" "Y_H_2" "Y_O2_2" "Y_O_2" "Y_OH_2" "Y_HO2_2" "Y_H2O_2" "Y_H2O2_2" "Y_N2_2"'
 $!SetStyleBase Factory
 $!GlobalPaper 
@@ -65,7 +65,7 @@ $!FrameName  = 'Frame 001'
 $!GlobalTime 
   SolutionTime = 0
 $!DeleteLineMaps 
-$!ActiveLineMaps  =  [1,3,6-7,9]
+$!ActiveLineMaps  =  [1,7,9]
 $!GlobalLinePlot 
   DataLabels
     {
@@ -365,22 +365,22 @@ $!XYLineAxis
   XDetail 1
     {
     RangeMin = 0
-    RangeMax = 0.60006002384424206308
-    GRSpacing = 0.2
+    RangeMax = 0.30003001192212103154
+    GRSpacing = 0.05
     }
 $!XYLineAxis 
   YDetail 1
     {
     RangeMin = 300
-    RangeMax = 2357.2056999999999789
+    RangeMax = 2385.6084423339843852
     GRSpacing = 500
     }
 $!XYLineAxis 
   YDetail 2
     {
-    RangeMin = -1.9308299539000161679E-24
-    RangeMax = 0.010003400034736842708
-    GRSpacing = 0.002
+    RangeMin = 0
+    RangeMax = 0.00038058105669333601407
+    GRSpacing = 5E-05
     Title
       {
       Offset = 8
@@ -390,6 +390,8 @@ $!XYLineAxis
       AxisAlignment = WithGridMax
       }
     }
+$!LinePlotLayers 
+  ShowSymbols = Yes
 $!FrameControl ActivateByNumber
   Frame = 1
 $!SetStyleBase Config

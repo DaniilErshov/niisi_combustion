@@ -6,28 +6,27 @@ double Y_max = 1 - Y_N2;
 double P = 0.101325;
 double R = 8.314;
 double koeff_l = 0.4;
-double l = 0.6;
+double l = 0.3;
 double x_center;
 long int myiter = 0;
 long int nniters;
 double eps_func = pow(10, -8);
 double Tstart = 300;
-double Tfinish = 2357;
+double Tfinish = 2385.4;
 double eps_x = pow(10, -6);
 double eps_fr = pow(10, -6);
 const double kB = 1.3806504e-23;
 const double Angstroem__ = 1.0e-10;
 const double santimetr = 1.0e-8;
 const vector<double> M = { 2., 1.0, 32.0, 16.0, 17.0, 33.0, 18.0, 34.0, 28.0 };
-
 string name_species[9] = { "H2", "H", "O2",
   "O", "OH", "HO2", "H2O", "H2O2", "N2" };
 
 int main()
 {
     init_consts(num_gas_species, num_react);
-    int N_x = 25;
-    double b = 0.00001;
+    int N_x = 12;
+    double b = 0.1;
     double M;
     double W, rho, Y_H2, Y_O2;
     int N_center;
@@ -37,7 +36,7 @@ int main()
     ofstream fout;
     double X_H2O, X_H2, X_O2, X_N2;
     double tout1 = pow(10, -7);
-    double Tend = 2380;
+    double Tend = 2385.4;
     int number = 4000;
     int print_value = 13000;
     int cons_flag = 0;
@@ -76,29 +75,11 @@ int main()
     double T_start = Tstart;
     double T_finish = Tfinish;
 
-    Ystart[8] = Yend[8] = Y_N2;
-    Yend[6] = 1 - Y_N2;
-
-    Ystart[0] = (1 - Y_N2) * 1. / 9.;
-    Ystart[2] = (1 - Y_N2) * 8. / 9.;
-    N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, T_finish, Ystart, Yend);
-    N_x = x_vect.size();
-    
-
-    for (int i = 0; i < N_x * num_gas_species; i++) {
-        cout << "Yi = " << Y_vect[i] << endl;
-        if ((i + 1) % num_gas_species == 0) cout << endl;
-    }
-
-    cout << "N_center = " << N_center << "\n";
-    cout << "T N_center = " << T_vect[N_center] << "\n";
-    Write_to_file2("detail", fout, x_vect,
-        T_vect, Y_vect, M, N_x, 1);
     std::cout << "Chemkin Reader Test\n";
 
    //Find_final_state_IDA(&chemkinReader, T_finish, Yend);
 
-   cout << "Cp = " << Cp_all(300, Ystart) << "\n";
+   //cout << "Cp = " << Cp_all(300, Ystart) << "\n";
    //Yend[0] = my_mol_weight(0) * 0.01457938;
    //Yend[1] = my_mol_weight(1) * 0.002126551;
    //Yend[2] = my_mol_weight(2) * 0.007320253
@@ -118,15 +99,36 @@ int main()
    //for (int i = 0; i < num_gas_species; i++) {
    //    Yend[i] /= 24.30197;
    //}
-   Yend[H2] = 0.00119584;
-   Yend[H] = 7.25484e-05;
-   Yend[O2] = 0.00710046;
-   Yend[O] = 0.00038046;
-   Yend[OH] = 0.00549423;
-   Yend[HO2] = 1.65194e-06;
-   Yend[H2O] = 0.240568;
-   Yend[H2O2] = 1.81769e-07;
-   Yend[N2] = 0.745187;
+   //Yend[H2] = 0.00119584;
+   //Yend[H] = 7.25484e-05;
+   //Yend[O2] = 0.00710046;
+   //Yend[O] = 0.00038046;
+   //Yend[OH] = 0.00549423;
+   //Yend[HO2] = 1.65194e-06;
+   //Yend[H2O] = 0.240568;
+   //Yend[H2O2] = 1.81769e-07;
+   //Yend[N2] = 0.745187;
+    Yend[H2] = 1.4563E-002;
+    Yend[H] = 1.7917E-003;
+    Yend[O2] = 5.4673E-003;
+    Yend[O] = 5.9257E-004;
+    Yend[OH] = 7.8587E-003;
+    Yend[HO2] = 1.2247E-006;
+    Yend[H2O] = 3.2394E-001;
+    Yend[H2O2] = 1.3135E-007;
+    Yend[N2] = 6.4579E-001;
+
+   Ystart[H2] = 2.9577E-001;
+   Ystart[H] = 0;
+   Ystart[O2] = 1.4789E-001;
+   Ystart[O] = 0;
+   Ystart[OH] = 0;
+   Ystart[HO2] = 0;
+   Ystart[H2O] = 0;
+   Ystart[H2O2] = 0;
+   Ystart[N2] = 5.5634E-001;
+
+   cout << "lambda = " << Lambda_All(Yend, Tfinish);
    //Yend[0] = 0.04252821
    //    ;
    //Yend[1] = 0.03886508
@@ -194,9 +196,11 @@ int main()
    //    
    //}
    //cout << "Dkm = " << (1 - Yend[my_spec]) / Dcheck << "\n";
+    //Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
+
 
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, T_finish, Ystart, Yend);
-    //Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
+    
     //Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, b);
 
     Write_to_file2("A_initial", fout, x_vect,
@@ -207,7 +211,7 @@ int main()
 
     //find_M(&chemkinReader, N_x, x_vect, T_vect, Y_vect, M, N_center, Ystart);
     cout << "M = " << M << "\n";
-    integrate_Y_IDA(&chemkinReader, N_x, x_vect,
+    integrate_Y_CVODE(&chemkinReader, N_x, x_vect,
        T_vect, Y_vect, M, N_center, Ystart);
     //Integrate_Y(&chemkinReader, N_x, x_vect_new, T_vect_new, Y_vect_new, M, N_center, Y);
     //Write_to_file2("detail", fout, x_vect_new, T_vect_new, Y_vect_new, M, N_x, 1);

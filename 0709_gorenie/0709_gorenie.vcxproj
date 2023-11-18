@@ -107,12 +107,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test;C:\Users\Данило\source\repos\check_boost3\chemk\Debug;C:\myboost\boost_1_83_0; C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\src;C:\boost\boost_1_82_0;C:\ida\BUILDDIR\bin\Debug;C:\ida\SOLVEDIR\include;C:\ida\BUILDDIR\include;C:\ida\SOLVEDIR\src\sundials;%(AdditionalIncludeDirectories);C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie;C:\kinsol\INSTDIR\include;C:\kinsol\BUILDDIR\include;C:\kinsol\INSTDIR\src\sundials;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\pellec\CODE;C:\pellec\BUILDDIR\bin\Debug;C:\pellec\SOLVEDIR\include;C:\pellec\BUILDDIR\include;C:\pellec\SOLVEDIR\src\sundials;C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test;C:\Users\Данило\source\repos\check_boost3\chemk\Debug;C:\myboost\boost_1_83_0; C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\src;C:\boost\boost_1_82_0;C:\ida\BUILDDIR\bin\Debug;C:\ida\SOLVEDIR\include;C:\ida\BUILDDIR\include;C:\ida\SOLVEDIR\src\sundials;%(AdditionalIncludeDirectories);C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie;C:\kinsol\INSTDIR\include;C:\kinsol\BUILDDIR\include;C:\kinsol\INSTDIR\src\sundials;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\Users\Данило\source\repos\check_boost3\chemk\Debug\chemkinReader.lib;C:\ida\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\ida\BUILDDIR\bin\Debug\sundials_ida.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_kinsol.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\pellec\BUILDDIR\bin\Debug\sundials_cvode.lib;C:\pellec\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\Users\Данило\source\repos\check_boost3\chemk\Debug\chemkinReader.lib;C:\ida\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\ida\BUILDDIR\bin\Debug\sundials_ida.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_kinsol.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\myboost\boost_1_83_0\libs</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
