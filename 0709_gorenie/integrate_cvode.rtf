@@ -1,0 +1,202 @@
+{\rtf1\ansi\ansicpg1251\deff0\nouicompat\deflang1049{\fonttbl{\f0\fnil Cascadia Mono;}{\f1\fnil\fcharset0 Calibri;}}
+{\colortbl ;\red0\green0\blue255;\red0\green0\blue0;\red43\green145\blue175;\red128\green128\blue128;\red111\green0\blue138;\red0\green128\blue0;\red163\green21\blue21;\red0\green128\blue128;\red47\green79\blue79;}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\cf1\f0\fs19\lang9 void\cf2  integrate_Y_CVODE(IO::\cf3 ChemkinReader\cf2 * \cf4 chemkinReader_temp\cf2 , \cf1 int\cf2  \cf4 N_x\cf2 , \cf3 vector\cf2 <\cf1 double\cf2 >& \cf4 x_vect\cf2 ,\par
+    \cf3 vector\cf2 <\cf1 double\cf2 >& \cf4 T_vect\cf2 , \cf3 vector\cf2 <\cf1 double\cf2 >& \cf4 Y_vect\cf2 , \cf1 double\cf2 & \cf4 M\cf2 , \cf1 int\cf2  \cf4 N_center\cf2 , \cf1 double\cf2 * \cf4 Y_leftb\cf2 )\par
+\{\par
+    \cf3 SUNContext\cf2  sunctx;\par
+    \cf1 void\cf2 * cvode_mem;\par
+    \cf3 N_Vector\cf2  yy, yp, avtol, cons;\par
+    \cf3 realtype\cf2  rtol, * yval, * ypval, * atval, * consval;\par
+    \cf3 realtype\cf2  t0, tret;\par
+    \cf1 int\cf2  iout, retval, retvalr;\par
+\par
+    \cf3 SUNNonlinearSolver\cf2  NLS;\par
+    \cf1 double\cf2  t, tout;\par
+    \cf3 N_Vector\cf2  y;\par
+    \cf3 N_Vector\cf2  abstol;\par
+    \cf3 SUNMatrix\cf2  A;\par
+    \cf3 SUNLinearSolver\cf2  LS;\par
+    \cf3 UserData\cf2  data;\par
+    data = (\cf3 UserData\cf2 )malloc(\cf1 sizeof\cf2  * data);\par
+    \cf1 int\cf2  NEQ_Y = num_gas_species * (\cf4 N_x\cf2  - 2);\par
+    \cf1 int\cf2  NEQ = 0 + NEQ_Y;\par
+\par
+    \cf1 int\cf2  j = 0;\par
+\par
+    cvode_mem = \cf5 NULL\cf2 ;\par
+    cons = yy = yp = avtol = \cf5 NULL\cf2 ;\par
+    yval = ypval = atval = \cf5 NULL\cf2 ;\par
+    A = \cf5 NULL\cf2 ;\par
+    LS = \cf5 NULL\cf2 ;\par
+    NLS = \cf5 NULL\cf2 ;\par
+\par
+    \cf6 /* Create SUNDIALS context */\cf2\par
+    retval = SUNContext_Create(\cf5 NULL\cf2 , &sunctx);\par
+\par
+    \cf6 //data->sunctx = sunctx;\cf2\par
+    \cf1 if\cf2  (check_retval(&retval, \cf7 "SUNContext_Create"\cf2 , 1)) \cf1 return\cf2 ;\par
+    \cf6 /* Initial conditions */\cf2\par
+    y = N_VNew_Serial(NEQ, sunctx);\par
+    cons = N_VNew_Serial(NEQ, sunctx);\par
+    \cf1 if\cf2  (check_retval((\cf1 void\cf2 *)y, \cf7 "N_VNew_Serial"\cf2 , 0)) \cf1 return\cf2 ;\par
+    abstol = N_VNew_Serial(NEQ, sunctx);\par
+\par
+    \cf1 for\cf2  (\cf1 int\cf2  i = 0; i < NEQ; i++) \{\par
+        \cf5 Ith\cf2 (abstol, i + 1) =  pow(10, -5);\par
+        \cf5 Ith\cf2 (cons, i + 1) = 1.0;\par
+    \}\par
+\par
+    Init_Data(data, \cf4 N_x\cf2 , \cf4 x_vect\cf2 ,\par
+        \cf4 T_vect\cf2 , \cf4 chemkinReader_temp\cf2 , NEQ,\par
+        \cf4 N_center\cf2 , \cf4 Y_leftb\cf2 );\par
+\par
+    \cf1 for\cf2  (\cf1 int\cf2  i = 0; i < \cf4 N_x\cf2 ; i++) \{\par
+        cout \cf8 <<\cf2  \cf7 "T = "\cf2  \cf8 <<\cf2  data->T[i] \cf8 <<\cf2  \cf7 "\\n"\cf2 ;\par
+    \}\par
+\par
+    yval = N_VGetArrayPointer(y);\par
+    \cf1 for\cf2  (\cf1 int\cf2  i = 0; i < NEQ; i++) \{\par
+        \cf1 if\cf2  (i % num_gas_species == 0)\par
+            cout \cf8 <<\cf2  \cf7 "\\nnn i = "\cf2  \cf8 <<\cf2  i / num_gas_species + 1 \cf8 <<\cf2  \cf7 "\\n"\cf2 ;\par
+        yval[i] = \cf4 Y_vect\cf8 [\cf2 i + num_gas_species\cf8 ]\cf2 ;\par
+        cout \cf8 <<\cf2  \cf7 "yval = "\cf2  \cf8 <<\cf2  name_species[i % num_gas_species] \cf8 <<\cf2  \cf7 " = "\cf2  \cf8 <<\cf2  yval[i] \cf8 <<\cf2  \cf7 "\\n"\cf2 ;\par
+    \}\par
+\par
+    cvode_mem = CVodeCreate(\cf5 CV_BDF\cf2 , sunctx);\par
+    \cf1 if\cf2  (check_retval((\cf1 void\cf2 *)cvode_mem, \cf7 "CVodeCreate"\cf2 , 0)) \cf1 return\cf2 ;\par
+\par
+    retval = CVodeInit(cvode_mem, func_Y_CVODE, \cf5 T0\cf2 , y);\par
+    \cf1 if\cf2  (check_retval(&retval, \cf7 "CVodeInit"\cf2 , 1)) \cf1 return\cf2 ;\par
+\par
+    retval = CVodeSVtolerances(cvode_mem, \cf5 RTOL\cf2 , abstol);\par
+    \cf1 if\cf2  (check_retval(&retval, \cf7 "CVodeSVtolerances"\cf2 , 1)) \cf1 return\cf2 ;\par
+    retval = CVodeSetConstraints(cvode_mem, cons);\par
+    \par
+    A = SUNDenseMatrix(NEQ, NEQ, sunctx);\par
+    \cf1 if\cf2  (check_retval((\cf1 void\cf2 *)A, \cf7 "SUNDenseMatrix"\cf2 , 0)) \cf1 return\cf2 ;\par
+\par
+    \cf6 /* Create dense SUNLinearSolver object for use by CVode */\cf2\par
+    LS = SUNLinSol_Dense(y, A, sunctx);\par
+    \cf1 if\cf2  (check_retval((\cf1 void\cf2 *)LS, \cf7 "SUNLinSol_Dense"\cf2 , 0)) \cf1 return\cf2 ;\par
+\par
+    retval = CVodeSetLinearSolver(cvode_mem, LS, A);\par
+    \cf1 if\cf2  (check_retval(&retval, \cf7 "CVodeSetLinearSolver"\cf2 , 1)) \cf1 return\cf2 ;\par
+\par
+    retval = CVodeSetMaxNumSteps(cvode_mem, 10000);\par
+    retval = CVodeSetMaxHnilWarns(cvode_mem, 50);\par
+    retval = CVodeSetUserData(cvode_mem, data);\par
+    \cf1 if\cf2  (check_retval(&retval, \cf7 "CVODESetUserData"\cf2 , 1)) \cf1 return\cf2 ;\par
+    \cf6 /* Create and initialize  y, y', and absolute tolerance vectors. */\cf2\par
+    t0 = \cf5 ZERO\cf2 ;\par
+    data->M = \cf4 M\cf2 ;\par
+    \cf1 double\cf2  rho;\par
+    flag = 1;\par
+    \cf3 ofstream\cf2  f_ida;\par
+    \cf1 double\cf2  sumY = 0;\par
+\par
+    iout = 0;\par
+    \cf1 double\cf2  dt =  pow(10, -7);\par
+    tout = dt;\par
+    \cf1 int\cf2  iend = 3000;\par
+    \cf1 int\cf2  number = 100;\par
+    \cf3 ofstream\cf2  fout;\par
+    \cf1 double\cf2  sum_Y = 0;\par
+    \cf1 while\cf2  (iout < iend) \{\par
+        retval = CVode(cvode_mem, tout, y, &t, \cf5 CV_NORMAL\cf2 );\par
+        cout \cf8 <<\cf2  \cf7 "tout = "\cf2  \cf8 <<\cf2  tout \cf8 <<\cf2  \cf7 "\\n"\cf2 ;\par
+        \cf1 for\cf2  (\cf1 int\cf2  i = 0; i < NEQ; i++) \{\par
+            \cf4 Y_vect\cf8 [\cf2 num_gas_species + i\cf8 ]\cf2  = yval[i];\par
+        \}\par
+\par
+        \cf1 for\cf2  (\cf1 int\cf2  i = NEQ; i < NEQ + num_gas_species; i++) \{\par
+            \cf4 Y_vect\cf8 [\cf2 num_gas_species + i - 1\cf8 ]\cf2  = \cf4 Y_vect\cf8 [\cf2 i - 1\cf8 ]\cf2 ;\par
+        \}\par
+        \cf1 if\cf2  (tout > 3 * pow(10, -5))\par
+        Write_to_file2(\cf7 "detail"\cf2  \cf8 +\cf2  to_string(tout * pow(10, 6)), f_ida, \cf4 x_vect\cf2 ,\par
+            \cf4 T_vect\cf2 , \cf4 Y_vect\cf2 , \cf4 M\cf2 , \cf4 N_x\cf2 , 2);\par
+\par
+        \cf1 if\cf2  (check_retval(&retval, \cf7 "IDASolve"\cf2 , 1)) \cf1 return\cf2 ;\par
+\par
+        iout++;\par
+        tout += dt;\par
+    \}\par
+\par
+    \cf6 /* Print final statistics to the screen */\cf2\par
+    cout \cf8 <<\cf2  \cf7 "\\nFinal Statistics:\\n"\cf2 ;\par
+    retval = CVodePrintAllStats(cvode_mem, \cf5 stdout\cf2 , \cf9 SUN_OUTPUTFORMAT_TABLE\cf2 );\par
+\par
+    \cf6 /* Print final statistics to a file in CSV format */\cf2\par
+    \cf6 //FID = fopen("idaRoberts_dns_stats.csv", "w");\cf2\par
+    \cf6 //retval = IDAPrintAllStats(mem, FID, SUN_OUTPUTFORMAT_CSV);\cf2\par
+    \cf6 //fclose(FID);\cf2\par
+\par
+    \cf6 /* check the solution error */\cf2\par
+    \cf6 //retval = check_ans(yy, tret, rtol, avtol);\cf2\par
+\par
+    \cf6 /* Free memory */\cf2\par
+    free(data);\par
+    N_VDestroy(y);                            \cf6 /* Free y vector */\cf2\par
+    N_VDestroy(abstol);                       \cf6 /* Free abstol vector */\cf2\par
+    CVodeFree(&cvode_mem);                    \cf6 /* Free CVODE memory */\cf2\par
+    SUNLinSolFree(LS);                        \cf6 /* Free the linear solver memory */\cf2\par
+    SUNMatDestroy(A);                         \cf6 /* Free the matrix memory */\cf2\par
+    SUNContext_Free(&sunctx);                 \cf6 /* Free the SUNDIALS context */\cf2\par
+\par
+    \cf1 return\cf2 ;\par
+\}\par
+\par
+\cf1 static\cf2  \cf1 int\cf2  func_Y_CVODE(\cf3 realtype\cf2  \cf4 t\cf2 , \cf3 N_Vector\cf2  \cf4 y\cf2 , \cf3 N_Vector\cf2  \cf4 ydot\cf2 , \cf1 void\cf2 * \cf4 user_data\cf2 )\par
+\{\par
+    \cf3 realtype\cf2 * yval, * ypval, * rval;\par
+    \cf3 UserData\cf2  data;\par
+    \cf3 realtype\cf2 * x_cells, * T_vect, * Y_vect, * Tp_vect, * Yp_vect, * Yiprev, * Yinext;\par
+    \cf1 double\cf2 * Yi;\par
+    \cf1 double\cf2  Temp;\par
+    \cf1 double\cf2  M;\par
+    data = (\cf3 UserData\cf2 )\cf4 user_data\cf2 ;\par
+    T_vect = data->T;\par
+    x_cells = data->x;\par
+    \cf1 int\cf2  j;\par
+    Yi = data->Yi;\par
+    x_cells = data->x;\par
+    T_vect = data->T;\par
+    Yi = data->Yi;\par
+    Yiprev = data->Yiprev;\par
+    Yinext = data->Yinext;\par
+    \cf1 int\cf2  myNx = data->Nx;\par
+    \cf1 int\cf2  myNeq = data->NEQ;\par
+    \cf1 int\cf2  myNm = data->N_m;\par
+    \cf1 int\cf2  Ncentr = data->N_centr;\par
+\par
+    yval = N_VGetArrayPointer(\cf4 y\cf2 );\par
+    ypval = N_VGetArrayPointer(\cf4 ydot\cf2 );\par
+    \cf1 double\cf2  rho;\par
+    \cf1 for\cf2  (\cf1 int\cf2  i = 1; i < myNx - 1; i++) \{\par
+        \cf6 //cout << "\\n\\n\\n\\nin func i = " << i << "\\n";\cf2\par
+        MakeYvectors(data->chemkinReader, x_cells, Yiprev, Yi, Yinext, yval, data->Y_left_bound, myNx, i, T_vect[0], data->M);\par
+        Get_molar_cons(data->Xi, Yi, T_vect[i]);\par
+\par
+        chem_vel(data->forward, data->reverse, data->equilib, data->wk_add, data->M,\par
+            Yi, Yinext,\par
+            x_cells[i], x_cells[i + 1],\par
+            T_vect[i], T_vect[i + 1],\par
+            data->Xi, data->ydot);\par
+\par
+        rho = get_rho(Yi, T_vect[i]);\par
+        \cf1 for\cf2  (\cf1 int\cf2  k_spec = 0; k_spec < num_gas_species; k_spec++) \{\par
+           \cf6 //cout << "yval = " << yval[k_spec] << "\\n";\cf2\par
+           ypval[k_spec + (i - 1) * num_gas_species] = -F_rightY(data->chemkinReader, \par
+                data->Yiprev, data->Yi, data->Yinext,\par
+                data->T[i - 1], data->T[i], data->T[i + 1],\par
+                data->x[i - 1], data->x[i], data->x[i + 1],\par
+                data->Xiprev, data->Xi, data->Xinext, data->gradX, data->Y_tmp, data->X_tmp,\par
+                data->M, k_spec, data->ydot, data->wk_add) / rho;\par
+           \cf6 //cout << "ypval = " << ypval[k_spec] << "\\n";\cf2\par
+        \}\par
+        \cf1 int\cf2  jop = 0;\par
+    \}\par
+    \cf1 return\cf2 (0);\par
+\}\cf0\f1\fs22\par
+}
+ 

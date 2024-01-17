@@ -1,6 +1,6 @@
 #!MC 1410
-$!VarSet |LFDSFN1| = '"detai6.300000.dat"'
-$!VarSet |LFDSVL1| = '"x" "T2" "Y_H2_2" "Y_H_2" "Y_O2_2" "Y_O_2" "Y_OH_2" "Y_HO2_2" "Y_H2O_2" "Y_H2O2_2" "Y_N2_2"'
+$!VarSet |LFDSFN1| = '"detail1410.000000.dat"'
+$!VarSet |LFDSVL1| = '"x" "T1" "Y_H2_1" "Y_H_1" "Y_O2_1" "Y_O_1" "Y_OH_1" "Y_HO2_1" "Y_H2O_1" "Y_H2O2_1" "Y_N2_1"'
 $!SetStyleBase Factory
 $!GlobalPaper 
   PaperSizeInfo
@@ -65,7 +65,7 @@ $!FrameName  = 'Frame 001'
 $!GlobalTime 
   SolutionTime = 0
 $!DeleteLineMaps 
-$!ActiveLineMaps  =  [1-2,4,9-10]
+$!ActiveLineMaps  =  [1-10]
 $!GlobalLinePlot 
   DataLabels
     {
@@ -73,11 +73,9 @@ $!GlobalLinePlot
     }
   Legend
     {
-    Show = Yes
     XYPos
       {
-      X = 82.874
-      Y = 62.062
+      X = 95
       }
     }
 $!LineMap  [1]
@@ -91,7 +89,6 @@ $!LineMap  [1]
   Lines
     {
     Color = Red
-    LineThickness = 0.4
     }
   Symbols
     {
@@ -226,7 +223,7 @@ $!LineMap  [6]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 7
-    YAxis = 2
+    YAxis = 3
     }
   Lines
     {
@@ -342,7 +339,7 @@ $!LineMap  [10]
     }
   Lines
     {
-    Color = Custom22
+    Color = Custom1
     LineThickness = 0.4
     }
   Symbols
@@ -361,29 +358,45 @@ $!LineMap  [10]
     }
 $!XYLineAxis 
   DepXToYRatio = 1
+  ViewportPosition
+    {
+    Y2 = 88
+    }
 $!XYLineAxis 
   XDetail 1
     {
     RangeMin = 0
-    RangeMax = 0.80008001192212108155
-    GRSpacing = 0.2
+    RangeMax = 0.30003001192212103154
+    GRSpacing = 0.05
     }
 $!XYLineAxis 
   YDetail 1
     {
     RangeMin = 300
-    RangeMax = 2385.4485142333983276
+    RangeMax = 2385.6084423339843852
     GRSpacing = 500
     }
 $!XYLineAxis 
   YDetail 2
     {
-    RangeMin = 1.4367100220624706708E-07
-    RangeMax = 0.75673165666216368752
-    GRSpacing = 0.2
+    RangeMin = -8.0229701779899187386E-06
+    RangeMax = 0.85167418377162873444
+    GRSpacing = 0.1
     AxisLine
       {
       AxisAlignment = WithGridMax
+      }
+    }
+$!XYLineAxis 
+  YDetail 3
+    {
+    RangeMin = 5.2402499543675685471E-24
+    RangeMax = 0.0010136813692050055443
+    GRSpacing = 0.0002
+    AxisLine
+      {
+      AxisAlignment = WithGridMax
+      Offset = 3
       }
     }
 $!FrameControl ActivateByNumber

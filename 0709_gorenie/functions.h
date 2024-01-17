@@ -22,9 +22,9 @@ using namespace std;
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
-#include <cvode/cvode.h>   
+//#include <cvode/cvode.h>   
 
-#define FTOL   RCONST(1.e-15) /* function tolerance */
+#define FTOL   RCONST(1.e-10) /* function tolerance */
 #define STOL   RCONST(1.e-15) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
@@ -72,8 +72,7 @@ extern const double Angstroem__ ;
 extern const double santimetr ;
 extern const vector<double> M ;
 extern string name_species[9];
-extern SUNContext sunctx;
-extern void* cvode_mem;
+extern std::map<std::string, int> komponents;
 
 typedef struct {
     realtype* x; //cells
@@ -92,17 +91,17 @@ typedef struct {
     realtype* forward;
     realtype* reverse;
     realtype* equilib;
-    SUNContext sunctx;
+    realtype* YkVk;
     int Nx;
     int N_m;
     int NEQ;
+    int NEQ_Y;
     int N_centr;
     realtype Tl;
     realtype M;
     realtype T_center;
     realtype* y;  // molar cons
     realtype* ydot; // d(molar cons) / dt
-    void* mykmem;
     IO::ChemkinReader* chemkinReader;
 } *UserData;
 
@@ -111,49 +110,48 @@ static int num_react = 22;
 
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
-double F_right(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double* X_tmp, double M, double* ydot, double* wk_add);
+double F_right(UserData data,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext);
 
-double F_rightY(IO::ChemkinReader* chemkinReader, double* Yiprev, double* Yi, double* Yinext,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp,
-    double* X_tmp,
-    double M, const int k_spec, double* ydot, double* wk_add);
+double F_rightY(UserData data, int k_spec,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext);
 
-static int func_Y(N_Vector u, N_Vector f, void* user_data);
-
-int Integrate_Y(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
     double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
 
 void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double M, int N_x, int number);
+    vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);
 
-int integrate_Y_IDA(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
+int integrate_Y_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
 static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-double gauss_func(double A, double mu, double sigma, double x, int k_spec);
+int integrate_All_IDA(int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
 
-void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b);
+static int func_All_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-double tanh_spec(double A, double mu, double sigma, double x, int k_spec);
-double tanh_T(double T_start, double T_finish, double mu, double sigma, double x);
-double tanh_spec_minus(double A, double mu, double sigma, double x, int k_spec);
+double get_M(double* Yiprev, double* Yi, double* Yinext,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, double* X_tmp,
+    double M, double* ydot, double* wk_add);
+
+void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start);
 
 void Init_Data(UserData data, int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, IO::ChemkinReader* chemkinReader_temp, int NEQ,
+    vector<double>& T_vect, int NEQ,
     int N_center, double* Y_leftb);
 
-void integrate_Y_CVODE(IO::ChemkinReader* chemkinReader_temp, int N_x, vector<double>& x_vect,
+static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+int integrate_Y_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
-static int func_Y_CVODE(realtype t, N_Vector y, N_Vector ydot, void* user_data);
+int Integrate_Kinsol(int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
 
-int FindBoundary(IO::ChemkinReader* chemkinReader_temp, double* Y_leftbound_inlet, double* Y_leftbound, double* Yinext, double Tl,
-    double xi, double xinext, double M);
+static int func_kinsol(N_Vector u, N_Vector f, void* user_data);
 
-static int left_bound_solve(N_Vector u, N_Vector f, void* user_data);
+void MakeYvectors(UserData data,
+    double* Y, int myNx, int i, double Tl);

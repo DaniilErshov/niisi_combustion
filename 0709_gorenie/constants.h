@@ -1,5 +1,6 @@
 #ifndef _CONSTS_H
 #define _CONSTS_H
+#include "chemkinReader.h"
 
 void init_consts(int num_gas_species, int num_react);
 double get_Hi(int component_i, double T);
@@ -9,7 +10,7 @@ double get_enthalpy(int num_species, double *Y, double T);
 double get_gas_constant(int num_gas_species, double *Y);
 double get_Cp(int num_species, double *Y, double T);
 double get_Cv(int num_species, double *Y, double T);
-
+double get_Si(int component_i, double T);
 
 struct phy_consts
 {
@@ -35,7 +36,6 @@ struct phy_consts
 
 struct che_consts
 {
-    // Coefficients for Chemical Kinetics
     double* kPrex_f;
     double* kPow_f;
     double* kE_f;
@@ -51,7 +51,11 @@ struct che_consts
     double* Fcent;
     double* F_f;
     double* F_r;
-        
+    double* sum_v;
+    const std::string chemfile;
+    const std::string thermfile;
+    const std::string transfile;
+    IO::ChemkinReader* chemkinReader;
 };
 
 extern phy_consts phyc;

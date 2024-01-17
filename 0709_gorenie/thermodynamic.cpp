@@ -50,19 +50,22 @@ double Lambda_N2(double T) {
 
 
 double myget_Cpi(int k, double T) {
-    return get_Cpi(k, T) * pow(10, 3);
+    return get_Cpi(k, T);
+}
+double myget_Si(int k, double T) {
+    return get_Si(k, T);
 }
 
 double myget_Hi(int k, double T) {
-    return get_Hi(k, T) * pow(10, 3);
+    return get_Hi(k, T);
 }
 
 double myget_enthalpy(int num_gas_speciens, double* Y, double T) {
-    return get_enthalpy(num_gas_species, Y, T) * pow(10, 3);
+    return get_enthalpy(num_gas_species, Y, T);
 }
 
 double myget_Cp(int num_gas_speciens, double* Y, double T) {
-    return get_Cp(num_gas_species, Y, T) * pow(10, 3);
+    return get_Cp(num_gas_species, Y, T);
 }
 
 double Cp_all(double T, double* Y)

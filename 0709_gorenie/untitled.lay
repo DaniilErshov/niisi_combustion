@@ -1,5 +1,5 @@
 #!MC 1410
-$!VarSet |LFDSFN1| = '"detail12.000000.dat"'
+$!VarSet |LFDSFN1| = '"proizvod1410.000000.dat"'
 $!VarSet |LFDSVL1| = '"x" "T2" "Y_H2_2" "Y_H_2" "Y_O2_2" "Y_O_2" "Y_OH_2" "Y_HO2_2" "Y_H2O_2" "Y_H2O2_2" "Y_N2_2"'
 $!SetStyleBase Factory
 $!GlobalPaper 
@@ -65,7 +65,7 @@ $!FrameName  = 'Frame 001'
 $!GlobalTime 
   SolutionTime = 0
 $!DeleteLineMaps 
-$!ActiveLineMaps  =  [1-2,4,6,8,10]
+$!ActiveLineMaps  =  [2-10]
 $!GlobalLinePlot 
   DataLabels
     {
@@ -80,8 +80,8 @@ $!GlobalLinePlot
       }
     XYPos
       {
-      X = 50.011
-      Y = 81.063
+      X = 98.281
+      Y = 96.89
       }
     }
 $!LineMap  [1]
@@ -118,11 +118,11 @@ $!LineMap  [2]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 3
-    YAxis = 2
     }
   Lines
     {
     Color = Green
+    LinePattern = Dashed
     LineThickness = 0.4
     }
   Symbols
@@ -173,7 +173,6 @@ $!LineMap  [4]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 5
-    YAxis = 2
     }
   Lines
     {
@@ -228,7 +227,6 @@ $!LineMap  [6]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 7
-    YAxis = 3
     }
   Lines
     {
@@ -283,11 +281,10 @@ $!LineMap  [8]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 9
-    YAxis = 2
     }
   Lines
     {
-    Color = Custom56
+    Color = Green
     LineThickness = 0.4
     }
   Symbols
@@ -311,7 +308,6 @@ $!LineMap  [9]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 10
-    YAxis = 3
     }
   Lines
     {
@@ -339,11 +335,11 @@ $!LineMap  [10]
     Zone = 1
     XAxisVar = 1
     YAxisVar = 11
-    YAxis = 2
     }
   Lines
     {
     Color = Custom1
+    LinePattern = Dashed
     LineThickness = 0.4
     }
   Symbols
@@ -362,10 +358,6 @@ $!LineMap  [10]
     }
 $!XYLineAxis 
   DepXToYRatio = 1
-  ViewportPosition
-    {
-    Y2 = 88
-    }
 $!XYLineAxis 
   XDetail 1
     {
@@ -376,35 +368,10 @@ $!XYLineAxis
 $!XYLineAxis 
   YDetail 1
     {
-    RangeMin = 300
-    RangeMax = 2385.6084423339843852
-    GRSpacing = 500
+    RangeMin = -4.218379974365234375
+    RangeMax = 0.019684464859589932695
+    GRSpacing = 0.5
     }
-$!XYLineAxis 
-  YDetail 2
-    {
-    RangeMin = 0
-    RangeMax = 0.74573654015064239076
-    GRSpacing = 0.2
-    AxisLine
-      {
-      AxisAlignment = WithGridMax
-      }
-    }
-$!XYLineAxis 
-  YDetail 3
-    {
-    RangeMin = 0
-    RangeMax = 0.012759376215375959479
-    GRSpacing = 0.002
-    AxisLine
-      {
-      AxisAlignment = WithGridMax
-      Offset = 3
-      }
-    }
-$!LinePlotLayers 
-  ShowSymbols = Yes
 $!FrameControl ActivateByNumber
   Frame = 1
 $!SetStyleBase Config

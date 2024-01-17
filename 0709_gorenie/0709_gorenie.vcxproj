@@ -112,7 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\pellec\BUILDDIR\bin\Debug\sundials_cvode.lib;C:\pellec\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\Users\Данило\source\repos\check_boost3\chemk\Debug\chemkinReader.lib;C:\ida\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\ida\BUILDDIR\bin\Debug\sundials_ida.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_kinsol.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\Данило\source\repos\check_boost3\chemk\Debug\chemkinReader.lib;C:\ida\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\ida\BUILDDIR\bin\Debug\sundials_ida.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_kinsol.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\myboost\boost_1_83_0\libs</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

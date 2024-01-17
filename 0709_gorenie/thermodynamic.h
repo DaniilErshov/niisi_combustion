@@ -17,6 +17,7 @@ double Lambda_N2(double T);
 double myget_Cpi(int k, double T);
 
 double myget_Hi(int k, double T);
+double myget_Si(int k, double T);
 
 double myget_enthalpy(int num_gas_speciens, double* Y, double T);
 
