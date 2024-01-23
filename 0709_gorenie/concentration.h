@@ -22,7 +22,7 @@ double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti
 
 void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext);
 
-void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Tcurr, double Tinext, double* y, double* yprime);
+void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);
 
 void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
 

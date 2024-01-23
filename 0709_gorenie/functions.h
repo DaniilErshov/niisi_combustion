@@ -49,7 +49,6 @@ using namespace std;
 
 
 #define PI     RCONST(3.1415926)
-#define E      RCONST(2.7182818)
 
 /* Problem Constants */
 extern double k_mol;
@@ -119,6 +118,7 @@ double F_rightY(UserData data, int k_spec,
 
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
     double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
+int InitialData2(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
 
 void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);
@@ -137,7 +137,7 @@ double get_M(double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, double* X_tmp,
     double M, double* ydot, double* wk_add);
 
-void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start);
+void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center);
 
 void Init_Data(UserData data, int N_x, vector<double>& x_vect,
     vector<double>& T_vect, int NEQ,
@@ -155,3 +155,7 @@ static int func_kinsol(N_Vector u, N_Vector f, void* user_data);
 
 void MakeYvectors(UserData data,
     double* Y, int myNx, int i, double Tl);
+
+int Find_final_state_IDA(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
+static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+void makeYstart(double koeff_topl, double* Ystart);

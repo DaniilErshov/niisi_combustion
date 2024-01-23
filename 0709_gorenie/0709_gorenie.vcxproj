@@ -108,6 +108,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\pellec\CODE;C:\pellec\BUILDDIR\bin\Debug;C:\pellec\SOLVEDIR\include;C:\pellec\BUILDDIR\include;C:\pellec\SOLVEDIR\src\sundials;C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test;C:\Users\Данило\source\repos\check_boost3\chemk\Debug;C:\myboost\boost_1_83_0; C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\src;C:\boost\boost_1_82_0;C:\ida\BUILDDIR\bin\Debug;C:\ida\SOLVEDIR\include;C:\ida\BUILDDIR\include;C:\ida\SOLVEDIR\src\sundials;%(AdditionalIncludeDirectories);C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie;C:\kinsol\INSTDIR\include;C:\kinsol\BUILDDIR\include;C:\kinsol\INSTDIR\src\sundials;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

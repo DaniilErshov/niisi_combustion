@@ -75,10 +75,9 @@ void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double 
 }
 
 //here send molar_cons
-void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Tcurr, double Tinext, double* y, double* yprime) {
-    double k_0_f[3], k_inf_f[3], k_0_r[3], k_inf_r[3];
-    double c[3], m[3], d = 0.14;
-    double Pr_f[3], Pr_r[3];
+void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+
+    double d = 0.14;
     int k = 0, l = 0;
     double logF_f, logF_core_f, logF_r, logF_core_r;
 
@@ -87,64 +86,76 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
     double Kpi;
     double dSiR, dHiRT;
     double sumv = 0;
+    double k_0_f, k_inf_f, c, m, Pr_f, Fcent, F_f;
+    double sum_ThirdBodies;
+    bool M_exist = 1;
+    auto& species = chec.chemkinReader->species();
+
+    //define TROE pressure dependence
     for (int i = 0; i < num_react; i++) {
-        if (i != 8 && i != 15 && i != 16) {
-            forward[i] = chec.kPrex_f[i] * pow(Tcurr, chec.kPow_f[i])
-                * exp(-chec.kE_f[i] / Tcurr / phyc.kRc);
-            reverse[i] = chec.kPrex_r[i] * pow(Tcurr, chec.kPow_r[i])
-                * exp(-chec.kE_r[i] / Tcurr / phyc.kRc);
-        }
+        auto& Arrhenius = chec.chemkinReader->reactions()[i].getArrhenius();
+        if (!chec.chemkinReader->reactions()[i].hasLOW())
+            forward[i] = Arrhenius.A * pow(Tcurr, Arrhenius.n)
+            * exp(-Arrhenius.E * pow(10, -3) / Tcurr / phyc.kRc);
         else {
-            if (i == 8) k = 0;
-            if (i == 15) k = 1;
-            if (i == 16) k = 2;
+            auto& Arrhenius_LP = chec.chemkinReader->reactions()[i].getLOW();
 
-            k_inf_f[k] = chec.kPrex_f[i] * pow(Tcurr, chec.kPow_f[i])
-                * exp(-chec.kE_f[i] / Tcurr / phyc.kRc);
-            k_inf_r[k] = chec.kPrex_r[i] * pow(Tcurr, chec.kPow_r[i])
-                * exp(-chec.kE_r[i] / Tcurr / phyc.kRc);
-            k_0_f[k] = chec.kPrex_f_lp[i] * pow(Tcurr, chec.kPow_f_lp[i])
-                * exp(-chec.kE_f_lp[i] / Tcurr / phyc.kRc);
-            k_0_r[k] = chec.kPrex_r_lp[i] * pow(Tcurr, chec.kPow_r_lp[i])
-                * exp(-chec.kE_r_lp[i] / Tcurr / phyc.kRc);
+            k_inf_f = Arrhenius.A * pow(Tcurr, Arrhenius.n)
+                * exp(-Arrhenius.E * pow(10, -3) / Tcurr / phyc.kRc);
 
-            c[k] = -0.4 - 0.67 * log10(chec.Fcent[i]);
-            m[k] = 0.75 - 1.27 * log10(chec.Fcent[i]);
+            k_0_f = Arrhenius_LP[0] * pow(Tcurr, Arrhenius_LP[1])
+                * exp(-Arrhenius_LP[2] * pow(10, -3) / Tcurr / phyc.kRc);
+
+            //cout << "Arrhenius_LP[0] = " << Arrhenius_LP[0] << "\n";
+            //cout << "Arrhenius_LP[1] = " << Arrhenius_LP[1] << "\n";
+            //cout << "Arrhenius_LP[2] = " << Arrhenius_LP[2] << "\n";
+
+            Fcent = chec.chemkinReader->reactions()[i].getTROE_center()[0];
+            c = -0.4 - 0.67 * log10(Fcent);
+            m = 0.75 - 1.27 * log10(Fcent);
+
+            auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
+
+            M_exist = 1;
+            Pr_f = 0;
+            for (const auto& thridSpecie : ThirdBodies) {
+                if (thridSpecie.first == "!M")
+                    M_exist = 0;
+            }
+
+            if (M_exist) {
+                for (const auto& specie : ThirdBodies) {
+                    Pr_f += specie.second * y[komponents[specie.first]];
+                    /*cout << "in THRID specie.first = " << specie.first << "\n";
+                    cout << "in THRID specie.second = " << specie.second << "\n";*/
+                }
+                for (const auto& specie : species) {
+
+                    if (!ThirdBodies.contains(specie.name())) {
+                        //cout << "AFTER THRID specie.first = " << specie.name() << "\n";
+                        Pr_f += y[komponents[specie.name()]];
+                    }
+                }
+            }
+
+            if (!M_exist) {
+                for (const auto& specie : ThirdBodies) {
+                    if (specie.first != "!M") {
+                        //cout << "!M = " << specie.first << "\n";
+                        Pr_f = y[komponents[specie.first]];
+                    }
+                }
+            }
+
+            Pr_f *= k_0_f / k_inf_f;
+            logF_core_f = pow((log10(Pr_f) + c) / (m - d * (log10(Pr_f) + c)), 2);
+            logF_f = pow(1.0 + logF_core_f, -1) * log10(Fcent);
+            F_f = pow(10, logF_f);
+            forward[i] = k_inf_f * (Pr_f / (1 + Pr_f)) * 1.;
         }
     }
 
-    Pr_f[0] = (k_0_f[0] * (1.3 * y[0] + 10 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8])) / k_inf_f[0];
-    Pr_r[0] = (k_0_r[0] * (1.3 * y[0] + 10 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8])) / k_inf_r[0];
-    Pr_f[1] = (k_0_f[1] * (3.7 * y[0] + 1.5 * y[8] + 1.2 * y[2] + 7.7 * y[7] + y[1] + y[3] + y[4] + y[5] + y[6])) / k_inf_f[1];
-    Pr_r[1] = (k_0_r[1] * (3.7 * y[0] + 1.5 * y[8] + 1.2 * y[2] + 7.7 * y[7] + y[1] + y[3] + y[4] + y[5] + y[6])) / k_inf_r[1];
-    Pr_f[2] = (k_0_f[2] * y[6]) / k_inf_f[2];
-    Pr_r[2] = (k_0_r[2] * y[6]) / k_inf_r[2];
-
-    for (k = 0; k < 3; k++) {
-        if (k == 0) l = 8;
-        if (k == 1) l = 15;
-        if (k == 2) l = 16;
-
-        if (Pr_f[k] == 0) forward[l] = k_inf_f[k];
-        else {
-            logF_core_f = pow((log10(Pr_f[k]) + c[k]) / (m[k] - d * (log10(Pr_f[k]) + c[k])), 2);
-            logF_f = pow(1.0 + logF_core_f, -1) * log10(chec.Fcent[l]);
-            chec.F_f[l] = pow(10, logF_f);
-            //forward[l] = k_inf_f[k] * (Pr_f[k] / (1 + Pr_f[k])) * chec.F_f[l];
-            forward[l] = k_inf_f[k] * (Pr_f[k] / (1 + Pr_f[k])) * 1.;
-        }
-
-        if (Pr_r[k] == 0) reverse[l] = k_inf_r[k];
-        else {
-            logF_core_r = pow((log10(Pr_r[k]) + c[k]) / (m[k] - d * (log10(Pr_r[k]) + c[k])), 2);
-            logF_r = pow(1.0 + logF_core_r, -1) * log10(chec.Fcent[l]);
-            chec.F_r[l] = pow(10, logF_r);
-            //reverse[l] = k_inf_r[k] * (Pr_r[k] / (1 + Pr_r[k])) * chec.F_r[l];
-            reverse[l] = k_inf_r[k] * (Pr_r[k] / (1 + Pr_r[k])) * 1;
-        }
-        //forward[l] = k_inf_f[k];
-        //reverse[l] = k_inf_r[k];
-    }
+    //find reverce constant
     for (int i = 0; i < num_react; i++) {
         auto& prod = chec.chemkinReader->reactions()[i].getProducts();
         auto& react = chec.chemkinReader->reactions()[i].getReactants();
@@ -152,169 +163,70 @@ void chem_vel(double* forward, double* reverse, double* equilib, double* wk_add,
         dSiR = 0;
         dHiRT = 0;
         for (const auto& iti : prod) {
-            //cout << "name = " << iti.first << " = " << iti.second << '\n';
-            //cout << "S = " << myget_Si(komponents[iti.first], Tcurr) * my_mol_weight(komponents[iti.first]) << "\n";
-            //cout << "H = " << myget_Hi(komponents[iti.first], Tcurr) * my_mol_weight(komponents[iti.first]) << "\n";
             dSiR += myget_Si(komponents[iti.first], Tcurr) * iti.second / phyc.kR * my_mol_weight(komponents[iti.first]);
             dHiRT += myget_Hi(komponents[iti.first], Tcurr) * iti.second / phyc.kR / Tcurr * my_mol_weight(komponents[iti.first]);
             sumv += iti.second;
         }
         for (const auto& iti : react) {
-            //cout << "name = " << iti.first << " = " << iti.second << '\n';
-            //cout << "S = " << myget_Si(komponents[iti.first], Tcurr) * my_mol_weight(komponents[iti.first]) << "\n";
-            //cout << "H = " << myget_Hi(komponents[iti.first], Tcurr) * my_mol_weight(komponents[iti.first]) << "\n";
             dSiR -= myget_Si(komponents[iti.first], Tcurr) * iti.second / phyc.kR * my_mol_weight(komponents[iti.first]);
             dHiRT -= myget_Hi(komponents[iti.first], Tcurr) * iti.second / phyc.kR / Tcurr * my_mol_weight(komponents[iti.first]);
             sumv -= iti.second;
         }
         Kpi = exp(dSiR - dHiRT);
         Kci = Kpi * pow(P / phyc.kR / Tcurr, sumv);
-        /*cout << "sumv = " << sumv << "\n";
-        cout << "Kpi = " << Kpi << "\n";
-        cout << "Kci = " << Kci << "\n";
-        cout << "forward = " << forward[i] << "\n";*/
         reverse[i] = forward[i] / Kci;
-        //cout << "reverse[i] = " << reverse[i] << "\n";
-        //cout << "\n\n\n";
-        //cout << "rho = " << get_rho(Yi, Tcurr) << "\n";
     }
 
-    equilib[0] = forward[0] * y[1] * y[2] - reverse[0] * y[3] * y[4];
-    equilib[1] = forward[1] * y[0] * y[3] - reverse[1] * y[1] * y[4];
-    equilib[2] = forward[2] * y[0] * y[4] - reverse[2] * y[1] * y[6];
-    equilib[3] = forward[3] * y[6] * y[3] - reverse[3] * y[4] * y[4];
-    equilib[4] = (forward[4] * y[0] - reverse[4] * y[1] * y[1]) *
-        (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]);
-    equilib[5] = (forward[5] * y[3] * y[3] - reverse[5] * y[2]) *
-        (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]);
-    equilib[6] = (forward[6] * y[3] * y[1] - reverse[6] * y[4]) *
-        (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]);
-    equilib[7] = (forward[7] * y[1] * y[4] - reverse[7] * y[6]) *
-        (0.73 * y[0] + 3.65 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]);
-    equilib[8] = forward[8] * y[1] * y[2] - reverse[8] * y[5];
-    equilib[9] = forward[9] * y[0] * y[2] - reverse[9] * y[1] * y[5];
-    equilib[10] = forward[10] * y[5] * y[1] - reverse[10] * y[4] * y[4];
-    equilib[11] = forward[11] * y[5] * y[3] - reverse[11] * y[4] * y[2];
-    equilib[12] = forward[12] * y[5] * y[4] - reverse[12] * y[6] * y[2];
-    equilib[13] = forward[13] * y[5] * y[5] - reverse[13] * y[7] * y[2];
-    equilib[14] = forward[14] * y[5] * y[5] - reverse[14] * y[7] * y[2];
-    equilib[15] = forward[15] * y[7] - reverse[15] * y[4] * y[4];
-    equilib[16] = forward[16] * y[7] - reverse[16] * y[4] * y[4];
-    equilib[17] = forward[17] * y[7] * y[1] - reverse[17] * y[6] * y[4];
-    equilib[18] = forward[18] * y[7] * y[1] - reverse[18] * y[5] * y[0];
-    equilib[19] = forward[19] * y[7] * y[3] - reverse[19] * y[4] * y[5];
-    equilib[20] = forward[20] * y[7] * y[4] - reverse[20] * y[5] * y[6];
-    equilib[21] = forward[21] * y[7] * y[4] - reverse[21] * y[5] * y[6];
 
-    yprime[0] = -equilib[1] - equilib[2] - equilib[4] - equilib[9] + equilib[18];
-    yprime[1] = -equilib[0] + equilib[4] - equilib[6] - equilib[7] - equilib[8] -
-        equilib[10] - equilib[17] - yprime[0];
-    yprime[2] = -equilib[0] + equilib[5] - equilib[8] - equilib[9] + equilib[11] +
-        equilib[12] + equilib[13] + equilib[14];
-    yprime[3] = equilib[0] - equilib[1] - equilib[3] - 2. * equilib[5] - equilib[6] -
-        equilib[11] - equilib[19];
-    yprime[4] = equilib[0] + equilib[1] - equilib[2] + 2. * equilib[3] + equilib[6] -
-        equilib[7] + 2. * equilib[10] + equilib[11] - equilib[12] + 2. * equilib[15] +
-        2. * equilib[16] + equilib[17] + equilib[19] - equilib[20] - equilib[21];
-    yprime[5] = equilib[8] + equilib[9] - equilib[10] - equilib[11] - equilib[12] -
-        2. * equilib[13] - 2. * equilib[14] + equilib[18] + equilib[19] + equilib[20] +
-        equilib[21];
-    yprime[6] = equilib[2] - equilib[3] + equilib[7] + equilib[12] + equilib[17] +
-        equilib[20] + equilib[21];
-    yprime[7] = equilib[13] + equilib[14] - equilib[15] - equilib[16] - equilib[17] -
-        equilib[18] - equilib[19] - equilib[20] - equilib[21];
-    yprime[8] = 0;
-    {
-       /* cout << "Tcurr = " << Tcurr << "\n";
-        cout << "Cp = " << Cp_all(Tcurr, Yi);
-        for (int i = 0; i < num_gas_species; i++) {
-            cout << "name = " << name_species[i] << " = " << y[i] << "\n";
+    //find equilib konstant with THIRDBODY
+    for (int i = 0; i < num_react; i++) {
+        auto& prod = chec.chemkinReader->reactions()[i].getProducts();
+        auto& react = chec.chemkinReader->reactions()[i].getReactants();
+        auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
+
+        double forw_slag = 1, rev_slag = 1;
+        double mnozh_M = 0;
+
+        for (const auto& iti : react) {
+            forw_slag *= pow(y[komponents[iti.first]], iti.second);
         }
-        cout << "\n\n\n\nT = " << Tcurr << "\n";
-        cout << "forward " << 0 << " = " << forward[0] * y[1] * y[2] << "\n";
-        cout << "reverrse " << 0 << " = " << reverse[0] * y[3] * y[4] << "\n\n";
 
-        cout << "forward " << 1 << " = " << forward[1] * y[0] * y[3] << "\n";
-        cout << "reverrse " << 1 << " = " << reverse[1] * y[1] * y[4] << "\n\n";
+        for (const auto& iti : prod) {
+            rev_slag *= pow(y[komponents[iti.first]], iti.second);
+        }
 
-        cout << "forward " << 2 << " = " << forward[2] * y[0] * y[4] << "\n";
-        cout << "reverrse " << 2 << " = " << reverse[2] * y[1] * y[6] << "\n\n";
-
-        cout << "forward " << 3 << " = " << forward[3] * y[6] * y[3] << "\n";
-        cout << "reverrse " << 3 << " = " << reverse[3] * y[4] * y[4] << "\n\n";
-
-        cout << "forward " << 4 << " = " << (forward[4] * y[0]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n";
-        cout << "reverrse " << 4 << " = " << (reverse[4] * y[1] * y[1]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n\n";
-
-        cout << "forward " << 5 << " = " << (forward[5] * y[3] * y[3]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n";
-
-        cout << "reverrse " << 5 << " = " << (reverse[5] * y[2]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n\n";
-
-        cout << "forward " << 6 << " = " << (forward[6] * y[3] * y[1]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n";
-
-        cout << "reverrse " << 6 << " = " << (reverse[6] * y[4]) *
-            (2.5 * y[0] + 12 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n\n";
-
-        cout << "forward " << 7 << " = " << (forward[7] * y[1] * y[4]) *
-            (0.73 * y[0] + 3.65 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n";
-
-        cout << "reverrse " << 7 << " = " << (reverse[7] * y[6]) *
-            (0.73 * y[0] + 3.65 * y[6] + y[1] + y[2] + y[3] + y[4] + y[5] + y[7] + y[8]) << "\n\n";
-
-        cout << "forward " << 8 << " = " << forward[8] * y[1] * y[2] << "\n";
-        cout << "reverrse " << 8 << " = " << reverse[8] * y[5] << "\n\n";
-
-        cout << "forward " << 9 << " = " << forward[9] * y[0] * y[2] << "\n";
-        cout << "reverrse " << 9 << " = " << reverse[9] * y[1] * y[5] << "\n\n";
-
-        cout << "forward " << 10 << " = " << forward[10] * y[5] * y[1] << "\n";
-        cout << "reverrse " << 10 << " = " << reverse[10] * y[4] * y[4] << "\n\n";
-
-        cout << "forward " << 11 << " = " << forward[11] * y[5] * y[3] << "\n";
-        cout << "reverrse " << 11 << " = " << reverse[11] * y[4] * y[2] << "\n\n";
-
-        cout << "forward " << 12 << " = " << forward[12] * y[5] * y[4] << "\n";
-        cout << "reverrse " << 12 << " = " << reverse[12] * y[6] * y[2] << "\n";
-
-        cout << "forward " << 13 << " = " << forward[13] * y[5] * y[5] << "\n";
-        cout << "reverrse " << 13 << " = " << reverse[13] * y[7] * y[2] << "\n\n";
-
-        cout << "forward " << 14 << " = " << forward[14] * y[5] * y[5] << "\n";
-        cout << "reverrse " << 14 << " = " << reverse[14] * y[7] * y[2] << "\n\n";
-
-        cout << "forward " << 15 << " = " << forward[15] * y[7] << "\n";
-        cout << "reverrse " << 15 << " = " << reverse[15] * y[4] * y[4] << "\n\n";
-
-        cout << "forward " << 16 << " = " << forward[16] * y[7] << "\n";
-        cout << "reverrse " << 16 << " = " << reverse[16] * y[4] * y[4] << "\n\n";
-
-        cout << "forward " << 17 << " = " << forward[17] * y[7] * y[1] << "\n";
-        cout << "reverrse " << 17 << " = " << reverse[17] * y[6] * y[4] << "\n\n";
-
-        cout << "forward " << 18 << " = " << forward[18] * y[7] * y[1] << "\n";
-        cout << "reverrse " << 18 << " = " << reverse[18] * y[5] * y[0] << "\n\n";
+        equilib[i] = (forward[i] * forw_slag - reverse[i] * rev_slag);
 
 
-        cout << "forward " << 19 << " = " << forward[19] * y[7] * y[3] << "\n";
+        if (chec.chemkinReader->reactions()[i].hasThirdBody()) {
 
-        cout << "reverrse " << 19 << " = " << reverse[19] * y[4] * y[5] << "\n\n";
+            for (const auto& specie : ThirdBodies) {
+                mnozh_M += specie.second * y[komponents[specie.first]];
+            }
 
-        cout << "forward " << 20 << " = " << forward[20] * y[7] * y[4] << "\n";
-        cout << "reverrse " << 20 << " = " << reverse[20] * y[5] * y[6] << "\n\n";
-
-        cout << "forward " << 21 << " = " << forward[21] * y[7] * y[4] << "\n";
-        cout << "reverrse " << 21 << " = " << reverse[21] * y[5] * y[6] << "\n\n";*/
+            for (const auto& specie : species) {
+                if (!ThirdBodies.contains(specie.name()))
+                    mnozh_M += y[komponents[specie.name()]];
+            }
+            equilib[i] *= mnozh_M;
+        }
     }
 
-    //add_toChemVel(wk_add, M, Yi, Yinext, x, xnext, Tcurr, Tinext);
-    //for (int i = 0; i < num_gas_species; i++) {
-    //    cout << name_species[i] << " = " << Yi[i] << "\n";
-    //}
+    //find totall yprime
+    for (int sp_i = 0; sp_i < num_gas_species; sp_i++) {
+        yprime[sp_i] = 0;
+    }
+    for (int r_i = 0; r_i < num_react; r_i++) {
+        auto& prod = chec.chemkinReader->reactions()[r_i].getProducts();
+        auto& react = chec.chemkinReader->reactions()[r_i].getReactants();
+        for (const auto& iti : prod) {
+            yprime[komponents[iti.first]] += equilib[r_i];
+        }
+        for (const auto& iti : react) {
+            yprime[komponents[iti.first]] -= equilib[r_i];
+        }
+    }
+    return;
 }
 
 double YkVk(int k, double T, double* Y, double* gradX, double* Xi) {

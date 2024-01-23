@@ -6,17 +6,18 @@ using namespace std;
 struct phy_consts phyc;
 struct che_consts chec;
 
-void init_consts(int num_gas_species, int num_react)
+void init_consts(int& num_gas_species, int& num_react)
 {
-    const std::string chemfile = R"(C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test\my_easychem.inp)";
+    const std::string chemfile = R"(C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test\chem2.inp)";
     const std::string thermfile = R"(C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test\therm-abf.dat)";
     const std::string transfile = R"(C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test\tran.dat)";
     chec.chemkinReader = new IO::ChemkinReader(chemfile, thermfile, transfile);
     chec.chemkinReader->read();
     chec.chemkinReader->check();
     std::cout << "NEW BLOCK" << std::endl;
+    num_react = chec.chemkinReader->reactions().size();
+    num_gas_species = chec.chemkinReader->species().size();
     chec.sum_v = new double[num_react];
-
     //phyc.kR = 8.314472e+7;  // universal gas constant ( erg/K/mole )
     //phyc.kRc = 1.987207e-3; // universal gas constant ( kcal/K/mole )
     //phyc.kTime = 1.e-3;     // dimensional time ( sec )
@@ -80,58 +81,41 @@ void init_consts(int num_gas_species, int num_react)
     chec.kPrex_f[0] = 1.04e+14 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[0] = 0.0;
     chec.kE_f[0] = 1.529e+01;
-    chec.kPrex_r[0] = 3.03014246e+11 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[0] = 0.38961298;
-    chec.kE_r[0] = -1.4679521;
+
 
     chec.kPrex_f[1] = 5.08e+04 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[1] = 2.67;
     chec.kE_f[1] = 6.292;
-    chec.kPrex_r[1] = 2.99382196e+04 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[1] = 2.63542748;
-    chec.kE_r[1] = 4.88346548;
+
 
     chec.kPrex_f[2] = 4.38e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[2] = 0.0;
     chec.kE_f[2] = 6.99;
-    chec.kPrex_r[2] = 5.77042535e+14 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[2] = -0.13221586;
-    chec.kE_r[2] = 2.19585983e+01;
+
 
     chec.kPrex_f[3] = 2.97e+06 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[3] = 2.02;
     chec.kE_f[3] = 1.34e+01;
-    chec.kPrex_r[3] = 1.32857168e+05 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[3] = 2.11764334;
-    chec.kE_r[3] = -2.97866226;
+
 
     chec.kPrex_f[4] = 4.577e+19 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[4] = -1.4;
     chec.kE_f[4] = 1.044e+02;
-    chec.kPrex_r[4] = 1.01954872e+20 * phyc.kTime / pow(phyc.kLength, 6);
-    chec.kPow_r[4] = -1.66332065;
-    chec.kE_r[4] = 7.96633142e-01;
+
 
     chec.kPrex_f[5] = 6.165e+15 * phyc.kTime / pow(phyc.kLength, 6);
     chec.kPow_f[5] = -0.5;
     chec.kE_f[5] = 0.0;
-    chec.kPrex_r[5] = 5.59807301e+17 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[5] = -0.66086484;
-    chec.kE_r[5] = 1.18940482e+02;
 
     chec.kPrex_f[6] = 4.714e+18 * phyc.kTime / pow(phyc.kLength, 6);
     chec.kPow_f[6] = -1.0;
     chec.kE_f[6] = 0.0;
-    chec.kPrex_r[6] = 1.24716744e+18 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[6] = -0.77125187;
-    chec.kE_r[6] = 1.02184189e+02;
+
 
     chec.kPrex_f[7] = 3.5e+22 * phyc.kTime / pow(phyc.kLength, 6);
     chec.kPow_f[7] = -2.0;
     chec.kE_f[7] = 0.0;
-    chec.kPrex_r[7] = 2.0700207e+23 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[7] = -1.86889521;
-    chec.kE_r[7] = 1.18561398e+02;
+
 
     chec.kPrex_f[8] = 4.650e+12 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[8] = 0.44;
@@ -139,55 +123,37 @@ void init_consts(int num_gas_species, int num_react)
     chec.kPrex_f_lp[8] = 1.737e+19 * phyc.kTime / pow(phyc.kLength, 6);
     chec.kPow_f_lp[8] = -1.23;
     chec.kE_f_lp[8] = 0.0;
-    chec.kPrex_r[8] = 1.28895545e+13 * phyc.kTime;
-    chec.kPow_r[8] = 0.33713549;
-    chec.kE_r[8] = 4.90103554e+01;
-    chec.kPrex_r_lp[8] = 4.81487231e+19 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r_lp[8] = -1.33286451;
-    chec.kE_r_lp[8] = 4.90103554e+01;
     chec.Fcent[8] = 0.67;
 
     chec.kPrex_f[9] = 5.176e+05 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[9] = 2.43;
     chec.kE_f[9] = 5.35e+01;
-    chec.kPrex_r[9] = 3.1959965e+06 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[9] = 2.06381484;
-    chec.kE_r[9] = -1.08748957;
+
 
     chec.kPrex_f[10] = 7.079e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[10] = 0.0;
     chec.kE_f[10] = 2.95e-01;
-    chec.kPrex_r[10] = 1.96857447e+10 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[10] = 0.72122562;
-    chec.kE_r[10] = 3.67125083e+01;
+
 
     chec.kPrex_f[11] = 3.250e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[11] = 0.0;
     chec.kE_f[11] = 0.0;
-    chec.kPrex_r[11] = 3.10194141e+12 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[11] = 0.33161264;
-    chec.kE_r[11] = 5.31738337e+01;
+
 
     chec.kPrex_f[12] = 2.456e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[12] = 0.0;
     chec.kE_f[12] = -4.97e-01;
-    chec.kPrex_r[12] = 5.24022641e+13 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[12] = 0.2339693;
-    chec.kE_r[12] = 6.90540962e+01;
+
 
     chec.kPrex_f[13] = 1.3e+11 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[13] = 0.0;
     chec.kE_f[13] = -1.63;
-    chec.kPrex_r[13] = 4.53613681e+12 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[13] = -0.20452492;
-    chec.kE_r[13] = 3.6805458e+01;
+
 
     chec.kPrex_f[14] = 3.658e+14 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[14] = 0.0;
     chec.kE_f[14] = 1.2e+01;
-    chec.kPrex_r[14] = 1.27639911e+16 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[14] = -0.20452492;
-    chec.kE_r[14] = 5.04339794e+01;
+
 
     chec.kPrex_f[15] = 2.0e+12 * phyc.kTime;
     chec.kPow_f[15] = 0.9;
@@ -195,12 +161,7 @@ void init_consts(int num_gas_species, int num_react)
     chec.kPrex_f_lp[15] = 2.490e+24 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f_lp[15] = -2.3;
     chec.kE_f_lp[15] = 4.875e+01;
-    chec.kPrex_r[15] = 5.75018987e+06 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[15] = 1.92861505;
-    chec.kE_r[15] = -2.28338488;
-    chec.kPrex_r_lp[15] = 7.15898639e+18 * phyc.kTime / pow(phyc.kLength, 6);
-    chec.kPow_r_lp[15] = -1.27138495;
-    chec.kE_r_lp[15] = -2.28316487;
+
     chec.Fcent[15] = 0.43;
 
     chec.kPrex_f[16] = 2.0e+12 * phyc.kTime;
@@ -209,48 +170,32 @@ void init_consts(int num_gas_species, int num_react)
     chec.kPrex_f_lp[16] = 1.865e+25 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f_lp[16] = -2.3;
     chec.kE_f_lp[16] = 4.875e+01;
-    chec.kPrex_r[16] = 5.75018987e+06 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[16] = 1.92861505;
-    chec.kE_r[16] = -2.28338488;
-    chec.kPrex_r_lp[16] = 5.36205205e+19 * phyc.kTime / pow(phyc.kLength, 6);
-    chec.kPow_r_lp[16] = -1.27138495;
-    chec.kE_r_lp[16] = -2.28316487;
+
     chec.Fcent[16] = 0.51;
 
     chec.kPrex_f[17] = 2.410e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[17] = 0.0;
     chec.kE_f[17] = 3.97;
-    chec.kPrex_r[17] = 4.09803701e+08 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[17] = 1.15971984;
-    chec.kE_r[17] = 7.15028707e+01;
 
     chec.kPrex_f[18] = 2.150e+10 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[18] = 1.0;
     chec.kE_f[18] = 6.0;
-    chec.kPrex_r[18] = 9.97892228e+07 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[18] = 1.57071008;
-    chec.kE_r[18] = 2.21457535e+01;
+
 
     chec.kPrex_f[19] = 9.550e+06 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[19] = 2.0;
     chec.kE_f[19] = 3.97;
-    chec.kPrex_r[19] = 2.61222637e+04 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[19] = 2.53613756;
-    chec.kE_r[19] = 1.87081218e+01;
+
 
     chec.kPrex_f[20] = 1.740e+12 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[20] = 0.0;
     chec.kE_f[20] = 3.18e-01;
-    chec.kPrex_r[20] = 1.06396697e+11 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[20] = 0.43849422;
-    chec.kE_r[20] = 3.14337266e+01;
+
 
     chec.kPrex_f[21] = 7.590e+13 * phyc.kTime / pow(phyc.kLength, 3);
     chec.kPow_f[21] = 0.0;
     chec.kE_f[21] = 7.269;
-    chec.kPrex_r[21] = 4.64109729e+12 * phyc.kTime / pow(phyc.kLength, 3);
-    chec.kPow_r[21] = 0.43849422;
-    chec.kE_r[21] = 3.83839725e+01;
+
 
     phyc.mol_weight[0] = 2.01594; // H2
     phyc.mol_weight[1] = 1.00797; // H

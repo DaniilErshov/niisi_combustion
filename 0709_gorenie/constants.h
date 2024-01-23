@@ -2,7 +2,7 @@
 #define _CONSTS_H
 #include "chemkinReader.h"
 
-void init_consts(int num_gas_species, int num_react);
+void init_consts(int& num_gas_species, int& num_react);
 double get_Hi(int component_i, double T);
 double get_Cpi(int component_i, double T);
 double get_Cvi(int component_i, double T);
