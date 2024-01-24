@@ -212,10 +212,16 @@ void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, d
         }
     }
 
+    //for (int r_i = 0; r_i < num_react; r_i++)
+    //{
+    //    cout << "forward " << r_i << " = " << forward[r_i] << "\n";
+    //    cout << "reverse " << r_i << " = " << reverse[r_i] << "\n";
+    //}
     //find totall yprime
     for (int sp_i = 0; sp_i < num_gas_species; sp_i++) {
         yprime[sp_i] = 0;
     }
+
     for (int r_i = 0; r_i < num_react; r_i++) {
         auto& prod = chec.chemkinReader->reactions()[r_i].getProducts();
         auto& react = chec.chemkinReader->reactions()[r_i].getReactants();

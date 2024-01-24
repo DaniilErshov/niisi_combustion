@@ -94,16 +94,20 @@ int main()
 
 
     double koeff_topl = 0.5;
+
     makeYstart(koeff_topl, Ystart);
     M = 250 * 8.4955E-004;
-
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        cout << "Ystart = " << Ystart[k_spec] << "\n";
+    }
 
     Find_final_state_IDA(T_start, Tend, Ystart, Yend);
     cout << "Tend = " << Tend << "\n";
 
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-        cout << "Yi = " << Yend[k_spec] << "\n";
+        cout << "Yend = " << Yend[k_spec] << "\n";
     }
+    cout << "rho0 = " << get_rho(Ystart, Tstart);
 
     N_center = InitialData2(N_x, x_vect, T_vect, Y_vect, M, Tstart, Tend, Ystart, Yend);
     cout << "N_center = " << N_center << "\n";
@@ -116,46 +120,44 @@ int main()
         Write_to_file2("A_initial", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-        cout << "N_center = " << N_center << "\n";
-        cout << "T N_center = " << T_vect[N_center] << "\n";
         T_center = T_vect[N_center];
 
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 1);
 
+        //Integrate_Kinsol(N_x, x_vect,
+        //    T_vect, Y_vect, M, N_center, Ystart, 5);
 
         Write_to_file2("Ida_1", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
 
         cout << "size1 = " << T_vect.size() << "\n";
-        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.3, 3, 0, T_center);
-        Write_to_file2("Afteradd228", fout, x_vect,
-            T_vect, Y_vect, Y_vect, M, N_x, 1);
+        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.01, 3, 0, T_center);
         Write_to_file2("A_add", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-
+        integrate_Y_IDA(N_x, x_vect,
+            T_vect, Y_vect, M, N_center, Ystart);
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 2);
 
 
 
-        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.1, 3, 0, T_center);
+        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.005, 3, 0, T_center);
         integrate_Y_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart);
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 3);
 
 
-        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.05, 5, 0, T_center);
+        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, 5, 0, T_center);
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 4);
 
-        Integrate_Kinsol(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 5);
-
-        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.01, 3, 0, T_center);
+        Add_elem(T_vect, Y_vect, x_vect, N_x, N_center, 0.0001, 3, 0, T_center);
+        integrate_Y_IDA(N_x, x_vect,
+            T_vect, Y_vect, M, N_center, Ystart);
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 5);
     }
