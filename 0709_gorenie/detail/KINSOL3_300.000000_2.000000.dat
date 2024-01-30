@@ -1,0 +1,47 @@
+TITLE="Graphics"
+VARIABLES= "x", "T1", "Y_H2_1", 
+"Y_H_1", "Y_O2_1", "Y_O_1", "Y_OH_1", "Y_HO2_1", "Y_H2O_1", "Y_H2O2_1", "Y_N2_1"
+0  300 0.0554618 0 0.220085 0 0 0 0 0 0.724453
+0.025  nan nan nan nan nan nan nan nan nan nan
+0.05  nan nan nan nan nan nan nan nan nan nan
+0.074  nan nan nan nan nan nan nan nan nan nan
+0.098  nan nan nan nan nan nan nan nan nan nan
+0.099  nan nan nan nan nan nan nan nan nan nan
+0.1  nan nan nan nan nan nan nan nan nan nan
+0.104167  nan nan nan nan nan nan nan nan nan nan
+0.108333  nan nan nan nan nan nan nan nan nan nan
+0.1125  nan nan nan nan nan nan nan nan nan nan
+0.116667  nan nan nan nan nan nan nan nan nan nan
+0.11875  nan nan nan nan nan nan nan nan nan nan
+0.120833  nan nan nan nan nan nan nan nan nan nan
+0.122917  nan nan nan nan nan nan nan nan nan nan
+0.125  nan nan nan nan nan nan nan nan nan nan
+0.126042  nan nan nan nan nan nan nan nan nan nan
+0.127083  nan nan nan nan nan nan nan nan nan nan
+0.128125  nan nan nan nan nan nan nan nan nan nan
+0.129167  nan nan nan nan nan nan nan nan nan nan
+0.130208  nan nan nan nan nan nan nan nan nan nan
+0.13125  nan nan nan nan nan nan nan nan nan nan
+0.132292  nan nan nan nan nan nan nan nan nan nan
+0.133333  nan nan nan nan nan nan nan nan nan nan
+0.1375  nan nan nan nan nan nan nan nan nan nan
+0.141667  nan nan nan nan nan nan nan nan nan nan
+0.145833  nan nan nan nan nan nan nan nan nan nan
+0.15  1180.1 nan nan nan nan nan nan nan nan nan
+0.158333  nan nan nan nan nan nan nan nan nan nan
+0.166667  nan nan nan nan nan nan nan nan nan nan
+0.175  nan nan nan nan nan nan nan nan nan nan
+0.183333  nan nan nan nan nan nan nan nan nan nan
+0.191667  nan nan nan nan nan nan nan nan nan nan
+0.2  nan nan nan nan nan nan nan nan nan nan
+0.25  nan nan nan nan nan nan nan nan nan nan
+0.3  nan nan nan nan nan nan nan nan nan nan
+0.4  nan nan nan nan nan nan nan nan nan nan
+0.6  nan nan nan nan nan nan nan nan nan nan
+1  nan nan nan nan nan nan nan nan nan nan
+1.8  nan nan nan nan nan nan nan nan nan nan
+3.4  nan nan nan nan nan nan nan nan nan nan
+6.6  nan nan nan nan nan nan nan nan nan nan
+13  nan nan nan nan nan nan nan nan nan nan
+25.8  nan nan nan nan nan nan nan nan nan nan
+51.4  nan nan nan nan nan nan nan nan nan nan

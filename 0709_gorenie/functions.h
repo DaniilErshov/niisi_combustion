@@ -24,8 +24,8 @@ using namespace std;
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
 //#include <cvode/cvode.h>   
 
-#define FTOL   RCONST(1.e-10) /* function tolerance */
-#define STOL   RCONST(1.e-15) /* step tolerance     */
+#define FTOL   RCONST(1.e-10)/* function tolerance */
+#define STOL   RCONST(1.e-12) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
 #define PT25   RCONST(0.25)
@@ -91,6 +91,21 @@ typedef struct {
     realtype* reverse;
     realtype* equilib;
     realtype* YkVk;
+
+    realtype* YkVk_r;
+    realtype* YkVk_l;
+
+    realtype* gradX_r;
+    realtype* gradX_l;
+
+    realtype* X_tmp_r;
+    realtype* X_tmp_l;
+
+    realtype* Y_tmp_r;
+    realtype* Y_tmp_l;
+    map<int, map<string, double>>* Dij_saved;
+    double Vc_r, Vc_l, rho_r, rho_l;
+
     int Nx;
     int N_m;
     int NEQ;
@@ -124,12 +139,12 @@ void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);
 
 int integrate_Y_IDA(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, double t_fix);
 
 static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
 int integrate_All_IDA(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
 
 static int func_All_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
@@ -137,7 +152,9 @@ double get_M(double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, double* X_tmp,
     double M, double* ydot, double* wk_add);
 
-void Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center);
+bool Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center, int& j_t);
+
+void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center);
 
 void Init_Data(UserData data, int N_x, vector<double>& x_vect,
     vector<double>& T_vect, int NEQ,
@@ -159,3 +176,6 @@ void MakeYvectors(UserData data,
 int Find_final_state_IDA(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
 static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 void makeYstart(double koeff_topl, double* Ystart);
+
+void find_diff_slag(UserData data, double* Yi, double* Yinext,
+    double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i);
