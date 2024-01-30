@@ -72,7 +72,8 @@ extern const double santimetr ;
 extern const vector<double> M ;
 extern string name_species[9];
 extern std::map<std::string, int> komponents;
-
+extern std::map<int, string> komponents_str;
+extern std::map<int, std::map<string, double>> Dij_saved;
 typedef struct {
     realtype* x; //cells
     realtype* T; // temperature

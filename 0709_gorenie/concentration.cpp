@@ -233,13 +233,50 @@ double YkVk(int k, double T, double* Y, double* gradX, double* Xi) {
     double rho = get_rho(Y, T);
     double YkVk = 0;
     double Dkm = 0;
+    int T_int = (int)round(T);;
+    double Dij = 0;
+    double specie1, specie2;
+    bool flag_Add = 1;
+
+   /* for (const auto& item : Dij_saved)
+    {
+        if (item.first > T_int - 5 && item.first < T_int + 5)
+        {
+            flag_Add = 0;
+            break;
+        }
+    }
+    
+    for (int j = 0; j < num_gas_species; j++) {
+        specie1 = j, specie2 = k;
+
+        if (k < j) {
+            specie1 = k;
+            specie2 = j;
+        }
+
+        if(flag_Add)
+        {
+            Dij = Dij_func(k, j, T, Y);
+            Dij_saved[T_int].insert(make_pair(komponents_str[specie1] + " " + komponents_str[specie2], Dij));
+        }
+        else {
+                Dij = Dij_func(k, j, T, Y);
+                Dij_saved[T_int].insert(make_pair(komponents_str[specie1] + " " + komponents_str[specie2], Dij));
+        }
+
+        if (j != k) {
+            sum += Xi[j]
+                / Dij;
+        }*/
+
     for (int j = 0; j < num_gas_species; j++) {
         if (j != k) {
             sum += Xi[j]
                 / Dij_func(k, j, T, Y);
         }
     }
-    //cout << "T = " << T << "\n";
+
     Dkm = (1. - Y[k]) / sum;
     //cout << "Dkm for " << name_species[k] << " = " << Dkm << "\n";
     return  -my_mol_weight(k) / W * Dkm * gradX[k];

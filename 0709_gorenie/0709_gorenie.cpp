@@ -12,7 +12,7 @@ long int myiter = 0;
 long int nniters;
 double eps_func = pow(10, -8);
 
-double Tstart = 700;
+double Tstart = 300;
 double Tfinish = 2385.4;
 
 double eps_x = pow(10, -6);
@@ -35,6 +35,18 @@ std::map<std::string, int> komponents{
     {"H2O2", 7},
     {"N2", 8}
 };
+std::map<int, string> komponents_str{
+    {0, "H2"},
+    {1, "H"},
+    {2, "O2"},
+    {3, "O"},
+    {4, "OH"},
+    {5, "HO2"},
+    {6, "H2O"},
+    {7, "H2O2"},
+    {8, "N2"}
+};
+std::map<int, std::map<string, double>> Dij_saved;
 
 int main()
 {
@@ -113,7 +125,7 @@ int main()
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
 
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.5, 3, 0, T_center);
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.1, 1, 0, T_center);
         integrate_Y_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, t_Y);
         integrate_All_IDA(N_x, x_vect,
@@ -121,7 +133,7 @@ int main()
         Write_to_file2("detail/Ida_2", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.2, 1, 0, T_center);
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.05, 3, 0, T_center);
         //integrate_Y_IDA(N_x, x_vect,
         //    T_vect, Y_vect, M, N_center, Ystart, t_Y);
         integrate_All_IDA(N_x, x_vect,
@@ -129,7 +141,7 @@ int main()
         Write_to_file2("detail/Ida_3", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.01, 2, 0, T_center);
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.01, 3, 0, T_center);
         Integrate_Kinsol(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
         Write_to_file2("detail/KINSOL1_" + to_string(Tstart) + "_" + to_string(koeff_topl), fout, x_vect,
@@ -142,7 +154,7 @@ int main()
         fout.close();
 
 
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, 1, 0, T_center);
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, 3 , 0, T_center);
         Integrate_Kinsol(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
         Write_to_file2("detail/KINSOL2_" + to_string(Tstart) + "_" + to_string(koeff_topl), fout, x_vect,

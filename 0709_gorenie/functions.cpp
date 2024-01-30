@@ -287,7 +287,7 @@ void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, in
     }
     for (int k = 0; k < number; k++) {
         T.push_back(T[N_x - 1]);
-        x.push_back(x[N_x - 1] + 2 * (x[N_x - 1] - x[N_x - 2]));
+        x.push_back(x[N_x - 1] + 1.5 * (x[N_x - 1] - x[N_x - 2]));
         for (int i = 0; i < num_gas_species; i++) {
             Yi[i] = Y[Y.size() - num_gas_species + i];
         }
@@ -681,7 +681,9 @@ int integrate_Y_IDA(int N_x, vector<double>& x_vect,
         Get_mole_fr(data->Xiprev, data->Yiprev); Get_mole_fr(data->Xi, data->Yi); Get_mole_fr(data->Xinext, data->Yinext);
         rho = get_rho(data->Yi, T_vect[i]);
         sumY = 0;
-        
+        find_diff_slag(data, data->Yi, data->Yinext, data->Xi, data->Xinext, data->YkVk_r, data->Y_tmp_r, data->X_tmp_r, data->gradX_r, data->rho_r, data->Vc_r, i);
+
+        find_diff_slag(data, data->Yiprev, data->Yi, data->Xiprev, data->Xi, data->YkVk_l, data->Y_tmp_l, data->X_tmp_l, data->gradX_l, data->rho_l, data->Vc_l, i - 1);
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
             ypval[k_spec + (i - 1) * num_gas_species] = -F_rightY(data, k_spec,
                 data->T[i - 1], data->T[i], data->T[i + 1],
@@ -1005,7 +1007,9 @@ int integrate_All_IDA(int N_x, vector<double>& x_vect,
         rho = get_rho(data->Yi, T_vect[i]);
 
         double Cp = get_Cp(num_gas_species, data->Yi, T_vect[i]);
+        find_diff_slag(data, data->Yi, data->Yinext, data->Xi, data->Xinext, data->YkVk_r, data->Y_tmp_r, data->X_tmp_r, data->gradX_r, data->rho_r, data->Vc_r, i);
 
+        find_diff_slag(data, data->Yiprev, data->Yi, data->Xiprev, data->Xi, data->YkVk_l, data->Y_tmp_l, data->X_tmp_l, data->gradX_l, data->rho_l, data->Vc_l, i - 1);
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
             ypval[k_spec + (i - 1) * num_gas_species] = -F_rightY(data, k_spec,
                 data->T[i - 1], data->T[i], data->T[i + 1],
