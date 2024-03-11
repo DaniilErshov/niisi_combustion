@@ -428,6 +428,30 @@ void init_consts(int& num_gas_species, int& num_react)
 }
 
 // Enthalpy of ith component
+
+double get_dHiRT(double* Cp_coef, double T)
+{
+    double Hi;
+        Hi = -1. * Cp_coef[0] * pow(T, -1) + Cp_coef[1] * log(T) + Cp_coef[2] * T + Cp_coef[3] * pow(T, 2) / 2 + Cp_coef[4] * pow(T, 3) / 3
+        + Cp_coef[5] * pow(T, 4) / 4 + Cp_coef[6] * pow(T, 5) / 5 + Cp_coef[7];
+    return Hi;
+}
+
+double get_dSiR(double* Cp_coef, double T) {
+    double Si;
+        Si = -Cp_coef[0] * pow(T, -2) / 2. - Cp_coef[1] * pow(T, -1) + Cp_coef[2] * log(T) + Cp_coef[3] * pow(T, 1) + Cp_coef[4] * pow(T, 2) / 2.
+        + Cp_coef[5] * pow(T, 3) / 3. + Cp_coef[6] * pow(T, 4) / 4. + Cp_coef[8];
+    return Si;
+}
+double get_dCpi(double* Cp_coef, double T)
+{
+    double Cpi;
+        Cpi = Cp_coef[0] * pow(T, -2) + Cp_coef[1] * pow(T, -1) + Cp_coef[2] + Cp_coef[3] * pow(T, 1) + Cp_coef[4] * pow(T, 2)
+        + Cp_coef[5] * pow(T, 3) + Cp_coef[6] * pow(T, 4);
+
+    return Cpi;
+}
+
 double get_Hi(int component_i, double T)
 {
     double Hi;

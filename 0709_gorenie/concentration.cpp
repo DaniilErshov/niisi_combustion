@@ -66,7 +66,7 @@ void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext)
 }
 
 //here send molar_cons
-void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
 
     double d = 0.14;
     int k = 0, l = 0;
@@ -146,24 +146,54 @@ void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, d
             forward[i] = k_inf_f * (Pr_f / (1 + Pr_f)) * 1.;
         }
     }
-
     //find reverce constant
+    int komponent;
+    double koeff_komp;
     for (int i = 0; i < num_react; i++) {
         auto& prod = chec.chemkinReader->reactions()[i].getProducts();
         auto& react = chec.chemkinReader->reactions()[i].getReactants();
         sumv = 0;
         dSiR = 0;
         dHiRT = 0;
+        for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+            Sn[koeff_i] = 0;
+            Hn[koeff_i] = 0;
+        }
         for (const auto& iti : prod) {
-            dSiR += myget_Si(komponents[iti.first], Tcurr) * iti.second / phyc.kR * my_mol_weight(komponents[iti.first]);
-            dHiRT += myget_Hi(komponents[iti.first], Tcurr) * iti.second / phyc.kR / Tcurr * my_mol_weight(komponents[iti.first]);
-            sumv += iti.second;
+            komponent = komponents[iti.first];
+            koeff_komp = iti.second;
+            if (Tcurr >= 1000)
+            for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                Sn[koeff_i] += phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
+                Hn[koeff_i] += phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR / Tcurr * my_mol_weight(komponent);
+            }
+            if (Tcurr < 1000) {
+                for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                    Sn[koeff_i] += phyc.Cp_coef_lT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
+                    Hn[koeff_i] += phyc.Cp_coef_lT[komponent][koeff_i] * koeff_komp / phyc.kR / Tcurr * my_mol_weight(komponent);
+                }
+            }
+            sumv += koeff_komp;
         }
+
         for (const auto& iti : react) {
-            dSiR -= myget_Si(komponents[iti.first], Tcurr) * iti.second / phyc.kR * my_mol_weight(komponents[iti.first]);
-            dHiRT -= myget_Hi(komponents[iti.first], Tcurr) * iti.second / phyc.kR / Tcurr * my_mol_weight(komponents[iti.first]);
-            sumv -= iti.second;
+            komponent = komponents[iti.first];
+            koeff_komp = iti.second;
+            if (Tcurr >= 1000)
+                for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                    Sn[koeff_i] -= phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
+                    Hn[koeff_i] -= phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR / Tcurr * my_mol_weight(komponent);
+                }
+            if (Tcurr < 1000) {
+                for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                    Sn[koeff_i] -= phyc.Cp_coef_lT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
+                    Hn[koeff_i] -= phyc.Cp_coef_lT[komponent][koeff_i] * koeff_komp / phyc.kR / Tcurr * my_mol_weight(komponent);
+                }
+            }
+            sumv -= koeff_komp;
         }
+        dHiRT = get_dHiRT(Hn, Tcurr);
+        dSiR = get_dSiR(Sn, Tcurr);
         Kpi = exp(dSiR - dHiRT);
         Kci = Kpi * pow(P / phyc.kR / Tcurr, sumv);
         reverse[i] = forward[i] / Kci;
@@ -224,7 +254,6 @@ void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, d
             yprime[komponents[iti.first]] -= equilib[r_i];
         }
     }
-    return;
 }
 
 double YkVk(int k, double T, double* Y, double* gradX, double* Xi) {
@@ -236,40 +265,36 @@ double YkVk(int k, double T, double* Y, double* gradX, double* Xi) {
     int T_int = (int)round(T);;
     double Dij = 0;
     double specie1, specie2;
-    bool flag_Add = 1;
-
-   /* for (const auto& item : Dij_saved)
-    {
-        if (item.first > T_int - 5 && item.first < T_int + 5)
-        {
-            flag_Add = 0;
-            break;
-        }
-    }
     
-    for (int j = 0; j < num_gas_species; j++) {
-        specie1 = j, specie2 = k;
+    //for (int j = 0; j < num_gas_species; j++) {
+    //    specie1 = j, specie2 = k;
 
-        if (k < j) {
-            specie1 = k;
-            specie2 = j;
-        }
+    //    if (k < j) {
+    //        specie1 = k;
+    //        specie2 = j;
+    //    }
 
-        if(flag_Add)
-        {
-            Dij = Dij_func(k, j, T, Y);
-            Dij_saved[T_int].insert(make_pair(komponents_str[specie1] + " " + komponents_str[specie2], Dij));
-        }
-        else {
-                Dij = Dij_func(k, j, T, Y);
-                Dij_saved[T_int].insert(make_pair(komponents_str[specie1] + " " + komponents_str[specie2], Dij));
-        }
+    //    if (! (Dij_saved.contains(T_int) || Dij_saved.contains(T_int + 1) || Dij_saved.contains(T_int + 2) || Dij_saved.contains(T_int + 3) || Dij_saved.contains(T_int + 4)
+    //       || Dij_saved.contains(T_int - 1) || Dij_saved.contains(T_int -2)) || Dij_saved.contains(T_int - 3) || Dij_saved.contains(T_int -4))
+    //    {
+    //        Dij = Dij_func(k, j, T, Y);
+    //        Dij_saved[T_int].insert({ komponents_str[specie1] + " " + komponents_str[specie2], Dij });
+    //    }
+    //    else {
+    //        if ((Dij_saved[T_int].contains(komponents_str[specie1] + " " + komponents_str[specie2]))) {
+    //            Dij = Dij_saved[T_int][komponents_str[specie1] + " " + komponents_str[specie2]];
+    //        }
+    //        else{
+    //            Dij = Dij_func(k, j, T, Y);
+    //            Dij_saved[T_int].insert({ komponents_str[specie1] + " " + komponents_str[specie2], Dij });
+    //        }
+    //    }
 
-        if (j != k) {
-            sum += Xi[j]
-                / Dij;
-        }*/
-
+    //    if (j != k) {
+    //        sum += Xi[j]
+    //            / Dij;
+    //    }
+    //}
     for (int j = 0; j < num_gas_species; j++) {
         if (j != k) {
             sum += Xi[j]

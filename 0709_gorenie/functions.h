@@ -24,7 +24,7 @@ using namespace std;
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
 //#include <cvode/cvode.h>   
 
-#define FTOL   RCONST(1.e-10)/* function tolerance */
+#define FTOL   RCONST(1.e-8)/* function tolerance */
 #define STOL   RCONST(1.e-12) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
@@ -66,6 +66,8 @@ extern double eps_func;
 extern double eps_fr ;
 extern double Tstart ;
 extern double Tfinish ;
+extern double nevyaz_Y;
+extern double nevyaz_T;
 extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
@@ -73,7 +75,7 @@ extern const vector<double> M ;
 extern string name_species[9];
 extern std::map<std::string, int> komponents;
 extern std::map<int, string> komponents_str;
-extern std::map<int, std::map<string, double>> Dij_saved;
+extern std::unordered_map<int, std::unordered_map<string, double>> Dij_saved;
 typedef struct {
     realtype* x; //cells
     realtype* T; // temperature
@@ -93,6 +95,9 @@ typedef struct {
     realtype* equilib;
     realtype* YkVk;
 
+    realtype* Sn;
+    realtype* Hn;
+    realtype* Cpn;
     realtype* YkVk_r;
     realtype* YkVk_l;
 

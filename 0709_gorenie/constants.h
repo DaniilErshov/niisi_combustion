@@ -1,7 +1,6 @@
 #ifndef _CONSTS_H
 #define _CONSTS_H
 #include "chemkinReader.h"
-
 void init_consts(int& num_gas_species, int& num_react);
 double get_Hi(int component_i, double T);
 double get_Cpi(int component_i, double T);
@@ -11,6 +10,9 @@ double get_gas_constant(int num_gas_species, double *Y);
 double get_Cp(int num_species, double *Y, double T);
 double get_Cv(int num_species, double *Y, double T);
 double get_Si(int component_i, double T);
+double get_dHiRT(double* Cp_coef, double T);
+double get_dSiR(double* Cp_coef, double T);
+double get_dCpi(double* Cp_coef, double T);
 
 struct phy_consts
 {

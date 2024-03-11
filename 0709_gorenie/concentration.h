@@ -22,8 +22,6 @@ double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti
 
 void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext);
 
-void chem_vel(double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);
-
 void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
 
 double YkVk(int k, double T, double* Y, double* gradX, double* Xi);
@@ -31,3 +29,5 @@ double YkVk(int k, double T, double* Y, double* gradX, double* Xi);
 double Dij_func(int i, int j, double T, double* Y);
 
 double Dk_func(int i, double T, double* Y, double* X, int N);
+
+void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);
