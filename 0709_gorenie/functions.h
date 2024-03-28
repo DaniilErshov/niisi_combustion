@@ -22,8 +22,9 @@ using namespace std;
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
-#include <sunlinsol/sunlinsol_klu.h> /* access to Newton SUNNonlinearSolver  */
 #include <sundials/sundials_math.h>     /* access to SUNRexp               */
+#include <sunmatrix/sunmatrix_band.h>  /* access to band SUNMatrix             */
+#include <sunlinsol/sunlinsol_band.h>  /* access to band SUNLinearSolver       */
 //#include <cvode/cvode.h>   
 
 
@@ -204,3 +205,9 @@ void findValue(const std::vector<T>& data, bool(*condition)(T));
 void set_polynom(double** ploynom, std::string name_file, std::string type_polynom);
 
 void set_polynom_diffusion(double*** polynom, std::string name_file, std::string type_polynom);
+
+void MakeYvectorsY(UserData data,
+    double* Y, int myNx, int i, double Tl);
+
+double get_M(double Tprev, double T, double Tnext,
+    double xprev, double x, double xnext);
