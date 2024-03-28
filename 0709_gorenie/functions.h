@@ -22,7 +22,10 @@ using namespace std;
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
 #include <sunnonlinsol/sunnonlinsol_newton.h> /* access to Newton SUNNonlinearSolver  */
+#include <sunlinsol/sunlinsol_klu.h> /* access to Newton SUNNonlinearSolver  */
+#include <sundials/sundials_math.h>     /* access to SUNRexp               */
 //#include <cvode/cvode.h>   
+
 
 #define FTOL   RCONST(1.e-8)/* function tolerance */
 #define STOL   RCONST(1.e-12) /* step tolerance     */
@@ -51,6 +54,8 @@ using namespace std;
 #define PI     RCONST(3.1415926)
 
 /* Problem Constants */
+extern int num_gas_species;
+extern int num_react;
 extern double k_mol;
 extern double Y_N2;
 extern double Y_max;
@@ -71,47 +76,59 @@ extern double nevyaz_T;
 extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
-extern const vector<double> M ;
-extern string name_species[9];
+
+extern double* Yi;
+extern double* Yiprev;
+extern double* Yinext;
+
+extern double* YkVk_r;
+extern double* YkVk_l;
+
+extern double* gradX_r;
+extern double* gradX_l;
+
+extern double* X_tmp_r;
+extern double* X_tmp_l;
+
+extern double* Y_tmp_r;
+extern double* Y_tmp_l;
+
+extern double* Xiprev;
+extern double* Xi;
+extern double* Xinext;
+
+extern double* gradX;
+
+extern double* Y_tmp;
+extern double* X_tmp;
+extern double* YkVk;
+
+extern double* Sn;
+extern double* Hn;
+extern double* Cpn;
+
+extern double* forward_arr;
+extern double* reverse_arr;
+extern double* equilib_arr;
+extern double* Y_left_bound;
+extern double* wk_add;
+extern double* ydot;
+extern double*** diff_polynom;
+extern double** lambda_polynom;
+extern double* mol_weight;
+
+extern vector<string> name_species;
 extern std::map<std::string, int> komponents;
 extern std::map<int, string> komponents_str;
 extern std::unordered_map<int, std::unordered_map<string, double>> Dij_saved;
+extern std::map<std::string, int> mykomponents;
+extern std::map<int, string> mykomponents_str;
+extern vector<double> x_vect;
+extern vector<double> Y_vect;
+extern vector<double> T_vect;
+
 typedef struct {
-    realtype* x; //cells
-    realtype* T; // temperature
-    realtype* Yiprev;
-    realtype* Yi; // mass fr in one cell
-    realtype* Yinext; //grad mol fr
-    realtype* Xiprev; // mol fr in one cell
-    realtype* Xi;
-    realtype* Xinext;
-    realtype* gradX;
-    realtype* X_tmp;
-    realtype* Y_tmp;
-    realtype* Y_left_bound;
-    realtype* wk_add;
-    realtype* forward;
-    realtype* reverse;
-    realtype* equilib;
-    realtype* YkVk;
-
-    realtype* Sn;
-    realtype* Hn;
-    realtype* Cpn;
-    realtype* YkVk_r;
-    realtype* YkVk_l;
-
-    realtype* gradX_r;
-    realtype* gradX_l;
-
-    realtype* X_tmp_r;
-    realtype* X_tmp_l;
-
-    realtype* Y_tmp_r;
-    realtype* Y_tmp_l;
-    map<int, map<string, double>>* Dij_saved;
     double Vc_r, Vc_l, rho_r, rho_l;
-
     int Nx;
     int N_m;
     int NEQ;
@@ -120,13 +137,9 @@ typedef struct {
     realtype Tl;
     realtype M;
     realtype T_center;
-    realtype* y;  // molar cons
-    realtype* ydot; // d(molar cons) / dt
     IO::ChemkinReader* chemkinReader;
 } *UserData;
 
-static int num_gas_species = 9;
-static int num_react = 22;
 
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
@@ -137,11 +150,9 @@ double F_rightY(UserData data, int k_spec,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext);
 
 
-int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
-    double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
-int InitialData2(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
+int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
 
-void Write_to_file2(string str, ofstream& fout, vector<double>& x_vect,
+void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);
 
 int integrate_Y_IDA(int N_x, vector<double>& x_vect,
@@ -157,8 +168,6 @@ static int func_All_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, vo
 double get_M(double* Yiprev, double* Yi, double* Yinext,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, double* X_tmp,
     double M, double* ydot, double* wk_add);
-
-bool Add_elem(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center, int& j_t);
 
 void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center);
 
@@ -181,7 +190,17 @@ void MakeYvectors(UserData data,
 
 int Find_final_state_IDA(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
 static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
 void makeYstart(double koeff_topl, double* Ystart);
 
-void find_diff_slag(UserData data, double* Yi, double* Yinext,
+void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, double* Yinext,
     double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i);
+
+std::vector<std::string> splitString(std::string str, char splitter);
+
+template <typename T>
+void findValue(const std::vector<T>& data, bool(*condition)(T));
+
+void set_polynom(double** ploynom, std::string name_file, std::string type_polynom);
+
+void set_polynom_diffusion(double*** polynom, std::string name_file, std::string type_polynom);

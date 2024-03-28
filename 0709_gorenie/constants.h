@@ -13,6 +13,9 @@ double get_Si(int component_i, double T);
 double get_dHiRT(double* Cp_coef, double T);
 double get_dSiR(double* Cp_coef, double T);
 double get_dCpi(double* Cp_coef, double T);
+double get_Lambda(int i, double T);
+void allocate_memory();
+void free_memory();
 
 struct phy_consts
 {
@@ -38,21 +41,6 @@ struct phy_consts
 
 struct che_consts
 {
-    double* kPrex_f;
-    double* kPow_f;
-    double* kE_f;
-    double* kPrex_f_lp;
-    double* kPow_f_lp;
-    double* kE_f_lp;
-    double* kPrex_r;
-    double* kPow_r;
-    double* kE_r;
-    double* kPrex_r_lp;
-    double* kPow_r_lp;
-    double* kE_r_lp;
-    double* Fcent;
-    double* F_f;
-    double* F_r;
     double* sum_v;
     const std::string chemfile;
     const std::string thermfile;
