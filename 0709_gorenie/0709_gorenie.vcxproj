@@ -74,7 +74,7 @@
     <OutDir>C:\kinsol\BUILDDIR\bin\Debug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>D:\Storage\Daniil\sundials_build\bin\Release\</OutDir>
+    <OutDir>D:\Storage\Daniil\gorenie_try1\0709_gorenie\x64\Release</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -129,7 +129,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Storage\Daniil\sundials\sundials-6.5.1\include;D:\Storage\Daniil\sundials_build\include;D:\Storage\Daniil\sundials\sundials-6.5.1\src\sundials;D:\Storage\Daniil\gorenie\ChemKin_reader\src;D:\Storage\Daniil\boost_1_84_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Storage\Daniil\sundials\sundials-6.5.1\include;D:\Storage\Daniil\sundials_build\include;D:\Storage\Daniil\sundials\sundials-6.5.1\src\sundials;D:\Storage\Daniil\gorenie\ChemKin_reader\src;D:\Storage\Daniil\boost_1_84_0;D:\Storage\Daniil\sundials_build\bin\Release\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

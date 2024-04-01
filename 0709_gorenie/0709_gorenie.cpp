@@ -66,6 +66,7 @@ double* Yend;
 double* X;
 int num_gas_species;
 int num_react ;
+int ida_steps;
 vector<double> x_vect;
 vector<double> Y_vect;
 vector<double> T_vect;
@@ -114,7 +115,6 @@ int main()
         T_vect.resize(N_x);
         makeYstart(koeff_topl, Ystart);
         Find_final_state_IDA(T_start, Tend, Ystart, Yend);
-
         M = 300 * get_rho(Ystart, Tstart);
         int j_t = 1;
 
@@ -122,69 +122,73 @@ int main()
         Write_to_file("detail_" + to_string(Tstart) + "/initial", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-        double t_Y = pow(10, -7), t_full = 2 * pow(10, -8);
+        double t_Y = pow(10, -7), t_full = pow(10, -8);
         T_center = T_vect[N_center];
-        nevyaz_Y = 1;
-        nevyaz_T = 30;
+;
+        ida_steps = 60;
         integrate_Y_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, t_Y);
         Write_to_file("detail/after_Y", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
+        ida_steps = 20;
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
         Write_to_file("detail/Ida_1", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
 
+        ida_steps = 40;
+        integrate_All_IDA_dense(N_x, x_vect,
+            T_vect, Y_vect, M, N_center, Ystart, 2, t_full);;
+        Write_to_file("detail/ida_dense_" + to_string(koeff_topl), fout, x_vect,
+            T_vect, Y_vect, Y_vect, M, N_x, 1);
+
+
         Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.0001, 1, 0, T_center);
         integrate_Y_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, t_Y);
+
+        ida_steps = 20;
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 2, t_full);
         Write_to_file("detail/Ida_2", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
-
         Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.0005, 1, 0, T_center);
+
+
+        ida_steps = 20;
         integrate_All_IDA(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 2, t_full);
-        Integrate_Kinsol(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 6);
-        Write_to_file("detail/KINSOL0_" + to_string(Tstart) + "_" + to_string(koeff_topl), fout, x_vect,
-            T_vect, Y_vect, Y_vect, M, N_x, 1);
-
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.0005, 3, 0, T_center);
-        cout << "NX = " << x_vect.size() << "\n";
-        Integrate_Kinsol(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 6);
-        Write_to_file("detail_" + to_string((int)Tstart) + "/KINSOL1_" + to_string(koeff_topl), fout, x_vect,
+        Write_to_file("detail/Ida_3", fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
         Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.007, 3 , 0, T_center);
         cout << "NX = " << x_vect.size() << "\n";
-        Integrate_Kinsol(N_x, x_vect,
+        Integrate_Kinsol_dense(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
-        Write_to_file("detail_" + to_string((int)Tstart) + "/KINSOL2_" + to_string(koeff_topl), fout, x_vect,
+        Write_to_file("detail/KINSOL1_" + to_string(koeff_topl), fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
-        fout.open("detail_" + to_string((int)Tstart) + "/M2_" + to_string(koeff_topl) + ".dat");
-        fout << "M = " << M << "\n";
-        fout << "rho = " << get_rho(Ystart, Tstart) << "\n";
-        fout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
-        fout << "T = " << T_vect[T_vect.size() - 1] << "\n";
-        fout.close();
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.007, 3, 0, T_center);
 
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, 1, 0, T_center);
         cout << "NX = " << x_vect.size() << "\n";
+        Integrate_Kinsol_dense(N_x, x_vect,
+            T_vect, Y_vect, M, N_center, Ystart, 6);
+        Write_to_file("detail/KINSOL2_" + to_string(koeff_topl), fout, x_vect,
+            T_vect, Y_vect, Y_vect, M, N_x, 1);
+
         Integrate_Kinsol(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
-        Write_to_file("detail_" + to_string((int)Tstart) + "/KINSOL3_" + to_string(koeff_topl), fout, x_vect,
+        Write_to_file("detail/KINSOL3_dense_" + to_string(koeff_topl), fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
-        fout.open("detail_" + to_string((int)Tstart) + "/M3_" + to_string(koeff_topl) + ".dat");
-        fout << "M = " << M << "\n";
-        fout << "rho = " << get_rho(Ystart, Tstart) << "\n";
-        fout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
-        fout << "T = " << T_vect[T_vect.size() - 1] << "\n";
-        fout.close();
+        
+        
+        //fout.open("detail_" + to_string((int)Tstart) + "/M3_" + to_string(koeff_topl) + ".dat");
+        //fout << "M = " << M << "\n";
+        //fout << "rho = " << get_rho(Ystart, Tstart) << "\n";
+        //fout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
+        //fout << "T = " << T_vect[T_vect.size() - 1] << "\n";
+        //fout.close();
 
     } 
     free_memory();
