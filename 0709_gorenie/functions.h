@@ -219,11 +219,9 @@ int Integrate_Kinsol_dense(int N_x, vector<double>& x_vect,
 
 static int func_kinsol_dense(N_Vector u, N_Vector f, void* user_data);
 
+
 void MakeYvectors_dense(UserData data,
     double* Y, int myNx, int i, double Tl);
 
-int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
-
-
-static int func_All_IDA_dense(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+void MakeYvectors_kins(UserData data,
+    double* Y, int myNx, int i, double Tl);
