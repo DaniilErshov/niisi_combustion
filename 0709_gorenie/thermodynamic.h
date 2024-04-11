@@ -4,16 +4,6 @@
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
 
-double Lambda_H2(double T);
-double Lambda_H(double T);
-double Lambda_O2(double T);
-double Lambda_O(double T);
-double Lambda_OH(double T);
-double Lambda_HO2(double T);
-double Lambda_H2O(double T);
-double Lambda_H2O2(double T);
-double Lambda_N2(double T);
-
 double myget_Cpi(int k, double T);
 
 double myget_Hi(int k, double T);

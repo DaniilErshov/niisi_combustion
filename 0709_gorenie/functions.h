@@ -28,8 +28,8 @@ using namespace std;
 //#include <cvode/cvode.h>   
 
 
-#define FTOL   RCONST(1.e-8)/* function tolerance */
-#define STOL   RCONST(1.e-12) /* step tolerance     */
+#define FTOL   RCONST(1.e-7)/* function tolerance */
+#define STOL   RCONST(1.e-20) /* step tolerance     */
 
 #define ZERO   RCONST(0.0)
 #define PT25   RCONST(0.25)
@@ -77,6 +77,7 @@ extern double nevyaz_T;
 extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
+extern double** Dij_res;
 
 extern double* Yi;
 extern double* Yiprev;
@@ -118,10 +119,10 @@ extern double*** diff_polynom;
 extern double** lambda_polynom;
 extern double* mol_weight;
 extern int ida_steps;
-
+extern double eps;
 extern vector<string> name_species;
-extern std::map<std::string, int> komponents;
-extern std::map<int, string> komponents_str;
+extern std::unordered_map<std::string, int> komponents;
+extern std::unordered_map<int, string> komponents_str;
 extern std::unordered_map<int, std::unordered_map<string, double>> Dij_saved;
 extern std::map<std::string, int> mykomponents;
 extern std::map<int, string> mykomponents_str;
@@ -225,3 +226,25 @@ void MakeYvectors_dense(UserData data,
 
 void MakeYvectors_kins(UserData data,
     double* Y, int myNx, int i, double Tl);
+
+
+int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
+
+
+static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+void set_Dij_res(double T);
+
+
+int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
+
+
+static int func_All_IDA_dense(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+
+int Integrate_Kinsol_withoutM(int N_x, vector<double>& x_vect,
+    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
+
+static int func_kinsol_withoutM(N_Vector u, N_Vector f, void* user_data);

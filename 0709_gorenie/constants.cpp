@@ -7,8 +7,8 @@ using namespace std;
 
 struct phy_consts phyc;
 struct che_consts chec;
-extern std::map<std::string, int> komponents;
-extern std::map<int, string> komponents_str;
+extern std::unordered_map<std::string, int> komponents;
+extern std::unordered_map<int, string> komponents_str;
 extern vector<string> name_species;
 extern map<string, double> elem_mol_weight;
 extern double*** diff_polynom;
@@ -59,6 +59,7 @@ extern double* mol_weight;
 extern double* Ystart;
 extern double* Yend;
 extern double* X;
+extern double* YkVk_res;
 
 void init_consts(int& num_gas_species, int& num_react)
 {
@@ -67,12 +68,12 @@ void init_consts(int& num_gas_species, int& num_react)
     std::string visc_str = "VISCOSITIES";
     std::string diff_str = "DIFFUSION";
 
-    //const std::string chemfile = R"(D:\Storage\Daniil\n-heptane\heptane.inp)";
-    //const std::string thermfile = R"(D:\Storage\Daniil\n-heptane\term.dat)";
-    //const std::string transfile = R"(D:\Storage\Daniil\n-heptane\tran.dat)";
-    const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem2.inp)";
-    const std::string thermfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\therm-abf.dat)";
-    const std::string transfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\tran.dat)";
+    const std::string chemfile = R"(D:\Storage\Daniil\n-heptane\heptane.inp)";
+    const std::string thermfile = R"(D:\Storage\Daniil\n-heptane\term.dat)";
+    const std::string transfile = R"(D:\Storage\Daniil\n-heptane\tran.dat)";
+    //const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem2.inp)";
+    //const std::string thermfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\therm-abf.dat)";
+    //const std::string transfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\tran.dat)";
 
     chec.chemkinReader = new IO::ChemkinReader(chemfile, thermfile, transfile);
 
@@ -347,17 +348,19 @@ void allocate_memory() {
     Cpn = new double[9];
 
     ydot = new double[num_gas_species];
+    ydot = new double[num_gas_species];
     forward_arr = new double[num_react];
     reverse_arr = new double[num_react];
     equilib_arr = new double[num_react];
     Y_left_bound = new double[num_gas_species];
     wk_add = new double[num_gas_species];
 
-
+    Dij_res = new double* [num_gas_species];
     phyc.Cp_coef_hT = new double* [num_gas_species];
     phyc.Cp_coef_lT = new double* [num_gas_species];
 
     for (int i = 0; i < num_gas_species; i++) {
+        Dij_res[i] = new double [num_gas_species];
         phyc.Cp_coef_hT[i] = new double[9];
         phyc.Cp_coef_lT[i] = new double[9];
     }

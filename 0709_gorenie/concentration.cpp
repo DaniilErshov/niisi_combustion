@@ -111,10 +111,10 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
                     cout << "in THRID specie.second = " << specie.second << "\n";*/
                 }
                 for (const auto& specie : species) {
-
-                    if (!ThirdBodies.contains(specie.name())) {
+                    const auto& name_sp = specie.name();
+                    if (!ThirdBodies.contains(name_sp)) {
                         //cout << "AFTER THRID specie.first = " << specie.name() << "\n";
-                        Pr_f += y[komponents[specie.name()]];
+                        Pr_f += y[komponents[name_sp]];
                     }
                 }
             }
@@ -292,7 +292,7 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
     for (int j = 0; j < num_gas_species; j++) {
         if (j != k) {
             sum += Xi[j]
-                / Dij_func(k, j, T, Y);
+                / Dij_res[k][j];
         }
     }
 
@@ -301,19 +301,10 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
     return  -my_mol_weight(k) / W * Dkm * gradX[k];
 }
 
-double Dij_func(int i, int j, double T, double* Y)
+double Dij_func(int i, int j, double T)
 {
     double res;
     res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * log(T) + diff_polynom[i][j][2] * pow(log(T), 2) + diff_polynom[i][j][3] * pow(log(T), 3);
 
     return  exp(res);
-}
-
-double Dk_func(int i, double T, double* Y, double* X, int N) {
-    double sum = 0;
-    for (int j = 0; j < num_gas_species; j++) {
-        if (i != j) sum += X[j] / Dij_func(i, j, T, Y);
-        cout << "Dij = " << Dij_func(i, j, T, Y) << "\n";
-    }
-    return (1 - X[i]) / sum;
 }
