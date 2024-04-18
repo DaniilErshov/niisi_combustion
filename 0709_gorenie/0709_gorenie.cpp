@@ -6,7 +6,7 @@ double Y_max = 1 - Y_N2;
 double P = 0.101325;
 double R = 8.314;
 double koeff_l = 0.4;
-double l = 0.3;
+double l = 0.1;
 double x_center;
 long int myiter = 0;
 long int nniters;
@@ -104,22 +104,22 @@ int main()
     double X_H2O, X_H2, X_O2, X_N2;
     double tout1 = pow(10, -7);
     double Tend = 2385.4;
-
     double T_start = Tstart;
     double T_finish = Tfinish;
     double T_center;
     double koeff_topl = 1;
     int N_x = 19;
+
     x_vect.resize(N_x);
     Y_vect.resize(N_x * num_gas_species);
     T_vect.resize(N_x);
     makeYstart(koeff_topl, Ystart);
     Find_final_state_IDA(T_start, Tend, Ystart, Yend);
-    M = 30 * get_rho(Ystart, Tstart);
+    M = 60 * get_rho(Ystart, Tstart);
     int j_t = 1;
-
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
-    Write_to_file("detail_" + to_string(Tstart) + "/initial", fout, x_vect,
+    Tfinish = Tend;
+    Write_to_file("detail/initial", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
     double t_Y = pow(10, -7), t_full = pow(10, -6);
@@ -131,14 +131,14 @@ int main()
     Write_to_file("detail/after_Y", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);*/
 
-    ida_steps = 5;
+    ida_steps = 10;
     eps = 0;
     integrate_All_IDA(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-    ida_steps = 40;
+    ida_steps = 20;
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
@@ -148,7 +148,7 @@ int main()
     Integrate_Kinsol(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 6);
 
-    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 3, 0, T_center);
+    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 3, 1, T_center);
 
 
     ida_steps = 40;
@@ -158,21 +158,29 @@ int main()
     Write_to_file("detail/Ida_2", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-
+    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 1, 1, T_center);
+    ida_steps = 15;
+    eps = pow(10, -3);
+    integrate_All_IDA_M(N_x, x_vect,
+        T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Integrate_Kinsol(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 6);
-    Write_to_file("detail/KINSOL1_" + to_string(koeff_topl), fout, x_vect,
-        T_vect, Y_vect, Y_vect, M, N_x, 1);
 
     int vect_size_temp = 0;
     int number_epoch = 0;
     int add_cell = 3;
+    int add_cell_start = 2;
     while (vect_size_temp != x_vect.size())
     {
         vect_size_temp = x_vect.size();
         cout << "Nx = " << vect_size_temp << "\n";
-        if (number_epoch > 5) add_cell = 0;
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, add_cell, 0, T_center);
+        if (number_epoch > 8) add_cell = 0;
+        if (number_epoch > 3) add_cell_start = 0;
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, add_cell, add_cell_start, T_center);
+        ida_steps = 15;
+        eps = pow(10, -3);
+       /* integrate_All_IDA_M(N_x, x_vect,
+            T_vect, Y_vect, M, N_center, Ystart, 1, t_full);*/
         Integrate_Kinsol(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
         Write_to_file("detail/KINSOL", fout, x_vect,

@@ -35,7 +35,7 @@ double Lambda_All(double* X, double T)
     double res2 = 0;
 
     for (int i = 0; i < num_gas_species; i++) {
-        double lambda_i = get_Lambda(i, T);
+        double lambda_i = get_Lambda5(i, T);
         res1 += X[i] * lambda_i;
         res2 += X[i] / lambda_i;
     }

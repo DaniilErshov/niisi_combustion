@@ -1,4 +1,5 @@
 #include "concentration.h"
+extern chem_struct chem;
 
 double my_mol_weight(int k) {
     return phyc.mol_weight[k];
@@ -57,8 +58,7 @@ void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext)
     }
 }
 
-//here send molar_cons
-void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
 
     double d = 0.14;
     int k = 0, l = 0;
@@ -129,7 +129,7 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
             }
             F_f = 1;
             Pr_f *= k_0_f / k_inf_f;
-            if (chec.chemkinReader->reactions()[i].hasTROE() && Pr_f > pow(10, -20))
+            if (chec.chemkinReader->reactions()[i].hasTROE() && Pr_f > pow(10, -30))
             {
                 const auto& Troe_koeff = chec.chemkinReader->reactions()[i].getTROE();
                 double alpha = Troe_koeff[0];
@@ -278,6 +278,170 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
     }
 }
 
+
+//here send molar_cons
+void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+
+    double d = 0.14;
+    int k = 0, l = 0;
+    double logF_f, logF_core_f, logF_r, logF_core_r;
+
+    double sum1, sum2;
+    double Kci;
+    double Kpi;
+    double dSiR, dHiRT;
+    double sumv = 0;
+    double k_0_f, k_inf_f, c, m, Pr_f, Fcent, F_f;
+    double sum_ThirdBodies;
+    bool M_exist = 1;
+    auto& species = chec.chemkinReader->species();
+
+
+
+    //define TROE pressure dependence
+    for (int i = 0; i < num_react; i++) {
+        if (!chem.has_low[i])
+        {
+            forward[i] = chem.Arrh_params[i][0] * pow(Tcurr, chem.Arrh_params[i][1])
+                * exp(-chem.Arrh_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
+            int jop = 0;
+        }
+        else {
+            k_inf_f = chem.Arrh_params[i][0] * pow(Tcurr, chem.Arrh_params[i][1])
+                * exp(chem.Arrh_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
+
+            k_0_f = chem.Arrh_LP_params[i][0] * pow(Tcurr, chem.Arrh_LP_params[i][1])
+                * exp(-chem.Arrh_LP_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
+
+
+
+            Pr_f = 0;
+
+            for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                if (chem.ThirdBodies[i][k_spec] != 0)  
+                    Pr_f += chem.ThirdBodies[i][k_spec]* y[k_spec];
+                /*cout << "in THRID specie.first = " << specie.first << "\n";
+                cout << "in THRID specie.second = " << specie.second << "\n";*/
+            }
+
+            F_f = 1;
+            Pr_f *= k_0_f / k_inf_f;
+            if (chem.has_Troe[i] && Pr_f > pow(10, -30))
+            {
+                double alpha = chem.Troe_params[i][0];
+                double T3 = chem.Troe_params[i][1];
+                double T1 = chem.Troe_params[i][2];
+                double T2 = chem.Troe_params[i][3];
+
+                Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1) + exp(-T2 / Tcurr);
+                c = -0.4 - 0.67 * log10(Fcent);
+                m = 0.75 - 1.27 * log10(Fcent);
+                d = 0.14;
+                logF_core_f = pow((log10(Pr_f) + c) / (m - d * (log10(Pr_f) + c)), 2);
+                logF_f = pow(1.0 + logF_core_f, -1) * log10(Fcent);
+                F_f = pow(10, logF_f);
+            }
+
+
+            forward[i] = k_inf_f * (Pr_f / (1 + Pr_f)) * F_f;
+        }
+    }
+
+    //find reverce constant
+    int komponent;
+    double koeff_komp;
+    for (int i = 0; i < num_react; i++) {
+        if (chem.isReversible[i]) {
+            sumv = 0;
+            dSiR = 0;
+            dHiRT = 0;
+            for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                Sn[koeff_i] = 0;
+                Hn[koeff_i] = 0;
+            }
+            for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                if (chem.products[i][k_spec] != 0) {
+                    if (Tcurr >= chec.chemkinReader->species()[k_spec].thermo().getTCommon())
+                        for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                            Sn[koeff_i] += phyc.Cp_coef_hT[k_spec][koeff_i] * chem.products[i][k_spec] / phyc.kR * my_mol_weight(k_spec);
+                            Hn[koeff_i] += phyc.Cp_coef_hT[k_spec][koeff_i] * chem.products[i][k_spec] / phyc.kR / Tcurr * my_mol_weight(k_spec);
+                        }
+                    else {
+                        for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
+                            Sn[koeff_i] += phyc.Cp_coef_lT[k_spec][koeff_i] * chem.products[i][k_spec] / phyc.kR * my_mol_weight(k_spec);
+                            Hn[koeff_i] += phyc.Cp_coef_lT[k_spec][koeff_i] * chem.products[i][k_spec] / phyc.kR / Tcurr * my_mol_weight(k_spec);
+                        }
+                    }
+                }
+                sumv += chem.products[i][k_spec];
+            }
+
+
+            dHiRT = get_dHiRT(Hn, Tcurr);
+            dSiR = get_dSiR(Sn, Tcurr);
+            Kpi = exp(dSiR - dHiRT);
+            Kci = Kpi * pow(P / phyc.kR / Tcurr, sumv);
+            reverse[i] = forward[i] / Kci;
+        }
+        else {
+            //cout << chec.chemkinReader->reactions()[i] << "\n";
+            reverse[i] = 0;
+        }
+
+    }
+
+
+    //find equilib konstant with THIRDBODY
+    for (int i = 0; i < num_react; i++) {
+        double forw_slag = 1, rev_slag = 1;
+        double mnozh_M = 0;
+        double koeff;
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+            koeff = chem.products[i][k_spec];
+            if (koeff > 0) forw_slag *= pow(y[k_spec], koeff);
+            if (koeff < 0) rev_slag *= pow(y[k_spec], -koeff);
+
+        }
+
+        equilib[i] = (forward[i] * forw_slag - reverse[i] * rev_slag);
+        /*cout << "forward" << i << " = " << forward[i] << "\n";
+        cout << "reverse" << i << " = " << reverse[i] << "\n";
+        cout << " equilib" << i << " = " << equilib[i] << "\n\n\n";*/
+        if (chem.has_Third[i]) {
+            for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                if (chem.ThirdBodies[i][k_spec] != 0)
+                    mnozh_M += chem.ThirdBodies[i][k_spec] * y[k_spec];
+            }
+            equilib[i] *= mnozh_M;
+        }
+        if (equilib[i] != equilib[i])
+        {
+            for (int i = 0; i < num_gas_species; i++)
+            {
+                cout << "yi = " << y[i] << "\n";
+            }
+            int jop = 0;
+        }
+    }
+
+    //for (int r_i = 0; r_i < num_react; r_i++)
+    //{
+    //    cout << "forward " << r_i << " = " << forward[r_i] << "\n";
+    //    cout << "reverse " << r_i << " = " << reverse[r_i] << "\n";
+    //}
+    //find totall yprime
+    for (int sp_i = 0; sp_i < num_gas_species; sp_i++) {
+        yprime[sp_i] = 0;
+    }
+
+    for (int r_i = 0; r_i < num_react; r_i++) {
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+            if (chem.ThirdBodies[r_i][k_spec] != 0) 
+                yprime[k_spec] += equilib[r_i] * chem.products[r_i][k_spec];
+        }
+    }
+}
+
 double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
     double sum = 0.;
     double W = get_W(Y);
@@ -304,7 +468,19 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
 double Dij_func(int i, int j, double T)
 {
     double res;
-    res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * log(T) + diff_polynom[i][j][2] * pow(log(T), 2) + diff_polynom[i][j][3] * pow(log(T), 3);
-
+    double logt = log(T);
+    res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt;
+    //cout << "res = " << res << "\n";
     return  exp(res);
 }
+
+double Dij_func5(int i, int j, double T)
+{
+    double res;
+    double logt = log(T);
+    res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt
+        + diff_polynom[i][j][4] * logt * logt * logt * logt;
+    //cout << "res = " << res << "\n";
+    return  res * pow(T, 1.5) / P / pow(10, 2);
+}
+

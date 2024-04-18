@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>C:\kinsol\BUILDDIR\bin\Debug\</OutDir>
+    <OutDir>D:\Storage\Daniil\sundials_build\bin\Debug</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>D:\Storage\Daniil\gorenie_try1\0709_gorenie\x64\Release</OutDir>
@@ -110,14 +110,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\pellec\CODE;C:\pellec\BUILDDIR\bin\Debug;C:\pellec\SOLVEDIR\include;C:\pellec\BUILDDIR\include;C:\pellec\SOLVEDIR\src\sundials;C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\test;C:\Users\Данило\source\repos\check_boost3\chemk\Debug;C:\myboost\boost_1_83_0; C:\Users\Данило\source\repos\check_boost3\ChemKin_reader\src;C:\boost\boost_1_82_0;C:\ida\BUILDDIR\bin\Debug;C:\ida\SOLVEDIR\include;C:\ida\BUILDDIR\include;C:\ida\SOLVEDIR\src\sundials;%(AdditionalIncludeDirectories);C:\Users\Данило\source\repos\2403_gorenie\2403_gorenie;C:\kinsol\INSTDIR\include;C:\kinsol\BUILDDIR\include;C:\kinsol\INSTDIR\src\sundials;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Storage\Daniil\sundials\sundials-6.5.1\include;D:\Storage\Daniil\sundials_build\include;D:\Storage\Daniil\sundials\sundials-6.5.1\src\sundials;D:\Storage\Daniil\gorenie\ChemKin_reader\src;D:\Storage\Daniil\boost_1_84_0;D:\Storage\Daniil\sundials_build\bin\Debug\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\Users\Данило\source\repos\check_boost3\chemk\Debug\chemkinReader.lib;C:\ida\BUILDDIR\bin\Debug\sundials_nvecserial.lib;C:\ida\BUILDDIR\bin\Debug\sundials_ida.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_kinsol.lib;C:\kinsol\BUILDDIR\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\myboost\boost_1_83_0\libs</AdditionalLibraryDirectories>
+      <AdditionalDependencies>D:\Storage\Daniil\gorenie\ChemKin_reader\src\Debug\chemkinReader.lib;D:\Storage\Daniil\sundials_build\bin\Debug\sundials_kinsol.lib;D:\Storage\Daniil\sundials_build\bin\Debug\sundials_ida.lib;D:\Storage\Daniil\sundials_build\bin\Debug\sundials_nvecserial.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Storage\Daniil\boost_1_84_0\libs;D:\Storage\Daniil\boost_1_84_0\bin.v2\libs;D:\Storage\Daniil\boost_1_84_0\libs\serialization;D:\Storage\Daniil\boost_1_84_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,16 +142,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="0709_gorenie.cpp" />
+    <ClCompile Include="GasTransport.cpp" />
+    <ClCompile Include="MMCollisionInt.cpp" />
     <ClCompile Include="concentration.cpp" />
     <ClCompile Include="constants.cpp" />
     <ClCompile Include="functions.cpp" />
+    <ClCompile Include="polyfit.cpp" />
     <ClCompile Include="thermodynamic.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="concentration.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="functions.h" />
+    <ClInclude Include="GasTransport.h" />
+    <ClInclude Include="MMCollisionInt.h" />
+    <ClInclude Include="polyfit.h" />
     <ClInclude Include="thermodynamic.h" />
+    <ClInclude Include="utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

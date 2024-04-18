@@ -64,6 +64,8 @@ double get_M(double Tprev, double T, double Tnext,
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend)
 {
     double h = l / (Nx - 1);
+    //double x_start = l / 3.;
+    //double x_finish = 2. * l / 3.;
     double x_start = 0.1;
     double x_finish = 0.2;
     int dN = (x_finish - x_start) / h;
@@ -71,9 +73,9 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     double j = 0;
     std::cout << "M = " << M << "\n";
 
-    for (int i = 0; i < Nx; i++) {
-        x_vect[i] = h * i;
-    }
+    //for (int i = 0; i < Nx; i++) {
+    //    x_vect[i] = h * i;
+    //}
     x_vect = { 0.0,
  0.05,
  0.098,
@@ -146,7 +148,7 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
 }
 
 
-void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double T_center)
+void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double& T_center)
 {
     double T_max = 0, T_min = T[0];
     int Nx_add = 0;
@@ -207,7 +209,7 @@ void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, in
         N_x++;
     }
 
-    if (number_start == 1) {
+    for (int k = 0; k < number_start; k++) {
         for (int i = 0; i < num_gas_species; i++) {
             Yi[i] = Y[i];
         }
@@ -215,19 +217,21 @@ void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, in
             Y.insert(Y.begin(), Yi[i]);
         }
         T.insert(T.begin(), T[0]);
-        x.insert(x.begin(), x[0] - (x[1] - x[0]));
+        x.insert(x.begin(), x[0] - 1.5 * (x[1] - x[0]));
 
     }
     N_x = x.size();
-
+    T_center = (Tstart + Tfinish) / 2.;
+    T_min = 1000;
     for (int i = 0; i < T.size(); i++) {
-        if (T[i] < T_center + 1 && T[i] > T_center - 1) {
+        if (abs(T[i] - T_center) < T_min) {
             N_center = i;
-            cout << "Tcenter = " << T[i] << "\n";
-            cout << "Ncenter = " << N_center << "\n";
+            T_min = abs(T_vect[i] - T_center);
         }
     }
-
+    T_center = T[N_center];
+    cout << "Tcenter = " << T[N_center] << "\n";
+    cout << "Ncenter = " << N_center << "\n";
     for (int i = 0; i < Y.size(); i++) {
         if (Y[i] < 0) Y[i] = 0;
     }
@@ -2420,7 +2424,7 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
 void set_Dij_res(double T) {
     for (unsigned short int i = 0; i < num_gas_species; ++i) {
         for (unsigned short int j = i; j < num_gas_species; ++j) {
-            Dij_res[i][j] = Dij_func(i, j, T);
+            Dij_res[i][j] = Dij_func5(i, j, T);
             Dij_res[j][i] = Dij_res[i][j];
         }
     }

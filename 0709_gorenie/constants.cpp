@@ -1,12 +1,13 @@
 #include <cmath>
 #include <iostream>
-#include "constants.h"
 #include "functions.h"
 
 using namespace std;
 
 struct phy_consts phyc;
 struct che_consts chec;
+struct chem_struct chem;
+
 extern std::unordered_map<std::string, int> komponents;
 extern std::unordered_map<int, string> komponents_str;
 extern vector<string> name_species;
@@ -61,8 +62,7 @@ extern double* Yend;
 extern double* X;
 extern double* YkVk_res;
 
-void init_consts(int& num_gas_species, int& num_react)
-{
+void init_consts(int& num_gas_species, int& num_react) {
     std::string name_file = R"(D:\Storage\Daniil\check_read_file\check_read_file\n-heptane-tran.out)";
     std::string cond_str = "CONDUCTIVITIES";
     std::string visc_str = "VISCOSITIES";
@@ -104,75 +104,214 @@ void init_consts(int& num_gas_species, int& num_react)
     phyc.kDens = phyc.kMass / pow(phyc.kLength, 3); // dimensional density ( g/cm**3 )
     phyc.kVel = phyc.kLength / phyc.kTime;           // dimensional velocity ( cm/sec )
 
-    phyc.kR /= phyc.kMass * pow (phyc.kVel, 2);
+    phyc.kR /= phyc.kMass * pow(phyc.kVel, 2);
 
     int i_specie = 0;
     for (const auto& specie_i : chec.chemkinReader->species()) {
         komponents[specie_i.name()] = i_specie;
         komponents_str[i_specie] = specie_i.name();
-        cout << specie_i.name() << " = " << komponents[specie_i.name()] << "\n";
+        //cout << specie_i.name() << " = " << komponents[specie_i.name()] << "\n";
         name_species.push_back(specie_i.name());
         i_specie++;
     }
-    
-    allocate_memory();
 
-    set_polynom(lambda_polynom, name_file, cond_str);
+    chem.products = new int* [num_react];
+    chem.Arrh_params = new double* [num_react];
+    chem.isReversible = new bool[num_react];
+    chem.has_Third = new bool[num_react];
+    chem.ThirdBodies = new int* [num_react];
+    chem.has_low = new bool[num_react];
+    chem.Arrh_LP_params = new double* [num_react];
+    chem.has_Troe = new bool[num_react];
+    chem.Troe_params = new double* [num_react];
+    chem.M_exist = new bool[num_react];
 
-    set_polynom_diffusion(diff_polynom, name_file, diff_str);
-
-
-    for (int i = 0; i < num_gas_species; i++) {
-        auto koeff_vect = chec.chemkinReader->species()[i].thermo().getLowerTemperatureCoefficients();
-        cout << komponents_str[i] << "\n";
-        for (int j = 0; j < 9; j++) {
-            phyc.Cp_coef_lT[i][j] = 0;
-            phyc.Cp_coef_hT[i][j] = 0;
-            //cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
-        }
-
-        for (int j = 0; j < koeff_vect.size(); j++) {
-            phyc.Cp_coef_lT[i][j] = koeff_vect[j];
-            cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
-        }
-
-        koeff_vect = chec.chemkinReader->species()[i].thermo().getUpperTemperatureCoefficients();
-        for (int j = 0; j < koeff_vect.size(); j++) {
-            phyc.Cp_coef_hT[i][j] = koeff_vect[j];
-            cout << "ht = " << phyc.Cp_coef_hT[i][j] << "\n";
-        }
+    for (int i = 0; i < num_react; i++) {
+        chem.products[i] = new int[num_gas_species];
+        chem.Arrh_params[i] = new double[3];
+        chem.ThirdBodies[i] = new int[num_gas_species];
+        chem.Arrh_LP_params[i] = new double[3];
+        chem.Troe_params[i] = new double[4];
     }
 
-    phyc.mol_weight = new double[num_gas_species];
-    auto elm = chec.chemkinReader->elements();
-    for (int i = 0; i < num_gas_species; i++) {
-        phyc.mol_weight[i] = 0;
-        auto elms = chec.chemkinReader->species()[i].thermo().getElements();
-        for (const auto& elm_i : elms) {
-            phyc.mol_weight[i] += elem_mol_weight[elm_i.first] * elm_i.second;
+    double d = 0.14;
+    int k = 0, l = 0;
+    double logF_f, logF_core_f, logF_r, logF_core_r;
+
+    double sum1, sum2;
+    double Kci;
+    double Kpi;
+    double dSiR, dHiRT;
+    double sumv = 0;
+    double k_0_f, k_inf_f, c, m, Pr_f, Fcent, F_f;
+    double sum_ThirdBodies;
+    bool M_exist = 1;
+    auto& species = chec.chemkinReader->species();
+
+
+
+    //define TROE pressure dependence
+    for (int i = 0; i < num_react; i++) {
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+            chem.ThirdBodies[i][k_spec] = 0;
         }
-        cout << komponents_str[i] << " = " << phyc.mol_weight[i] << endl;
-    }
-
-
-    for (int i = 0; i < num_gas_species; i++)
-        phyc.mol_weight[i] /= phyc.kMass;
-
-    // 8th coef. is for enthalpy calculation
-
-    for (int component_i = 0; component_i < num_gas_species; component_i++)
-    {
-        for (int power_i = 0; power_i <= 8; power_i++)
+        auto& Arrhenius = chec.chemkinReader->reactions()[i].getArrhenius();
+        chem.Arrh_params[i][0] = Arrhenius.A;
+        chem.Arrh_params[i][1] = Arrhenius.n;
+        chem.Arrh_params[i][2] = Arrhenius.E;
+        chem.Arrh_LP_params[i][0] = 0;
+        chem.Arrh_LP_params[i][1] = 0;
+        chem.Arrh_LP_params[i][2] = 0;
+        chem.has_low[i] = 0;
+        chem.has_Troe[i] = 0;
+        chem.has_Third[i] = 0;
+        if (chec.chemkinReader->reactions()[i].hasLOW())
         {
-            // T < 1000 K
-            phyc.Cp_coef_lT[component_i][power_i] *= phyc.kR / phyc.mol_weight[component_i];
-            // T > 1000 K
-            phyc.Cp_coef_hT[component_i][power_i] *= phyc.kR / phyc.mol_weight[component_i];
+            auto& Arrhenius_LP = chec.chemkinReader->reactions()[i].getLOW();
+            chem.has_low[i] = 1;
+            chem.Arrh_LP_params[i][0] = Arrhenius_LP[0];
+            chem.Arrh_LP_params[i][1] = Arrhenius_LP[1];
+            chem.Arrh_LP_params[i][2] = Arrhenius_LP[2];
+
+
+            auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
+
+            M_exist = 1;
+            for (const auto& thridSpecie : ThirdBodies) {
+                if (thridSpecie.first == "!M")
+                    M_exist = 0;
+            }
+            chem.M_exist[i] = M_exist;
+            if (M_exist) {
+                for (const auto& specie : ThirdBodies) {
+                    chem.ThirdBodies[i][komponents[specie.first]] = specie.second;
+                }
+                for (const auto& specie : species) {
+                    const auto& name_sp = specie.name();
+                    if (!ThirdBodies.contains(name_sp)) {
+                        chem.ThirdBodies[i][komponents[name_sp]] = 1;
+                    }
+                }
+            }
+
+            if (!M_exist) {
+                for (const auto& specie : ThirdBodies) {
+                    if (specie.first != "!M") {
+                        chem.ThirdBodies[i][komponents[specie.first]] = 1.;
+                    }
+                }
+            }
+            if (chec.chemkinReader->reactions()[i].hasTROE())
+            {
+                const auto& Troe_koeff = chec.chemkinReader->reactions()[i].getTROE();
+                chem.has_Troe[i] = 1;
+                chem.ThirdBodies[i][0] = Troe_koeff[0];
+                chem.ThirdBodies[i][1] = Troe_koeff[1];
+                chem.ThirdBodies[i][2] = Troe_koeff[2];
+                chem.ThirdBodies[i][3] = Troe_koeff[3];
+            }
         }
     }
 
+    for (int i = 0; i < num_react; i++) {
+        chem.isReversible[i] = 0;
+        for (int k = 0; k < num_gas_species; k++) {
+            chem.products[i][k] = 0;
+        }
+        if (chec.chemkinReader->reactions()[i].isReversible()) {
+            chem.isReversible[i] = 1;
+        }
+        auto& prod = chec.chemkinReader->reactions()[i].getProducts();
+        auto& react = chec.chemkinReader->reactions()[i].getReactants();
+        for (const auto& iti : prod) {
+            chem.products[i][komponents[iti.first]] = iti.second;
+        }
 
+        for (const auto& iti : react) {
+            chem.products[i][komponents[iti.first]] = -iti.second;
+        }
+    }
+
+    for (int i = 0; i < num_react; i++) {
+        if (chec.chemkinReader->reactions()[i].hasThirdBody()) {
+            chem.has_Third[i] = 1;
+        }
+    }
+        allocate_memory();
+
+        set_polynom(lambda_polynom, name_file, cond_str);
+
+        set_polynom_diffusion(diff_polynom, name_file, diff_str);
+
+
+        for (int i = 0; i < num_gas_species; i++) {
+            auto koeff_vect = chec.chemkinReader->species()[i].thermo().getLowerTemperatureCoefficients();
+            cout << komponents_str[i] << "\n";
+            for (int j = 0; j < 9; j++) {
+                phyc.Cp_coef_lT[i][j] = 0;
+                phyc.Cp_coef_hT[i][j] = 0;
+                //cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
+            }
+
+            for (int j = 0; j < koeff_vect.size(); j++) {
+                phyc.Cp_coef_lT[i][j] = koeff_vect[j];
+                //cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
+            }
+
+            koeff_vect = chec.chemkinReader->species()[i].thermo().getUpperTemperatureCoefficients();
+            for (int j = 0; j < koeff_vect.size(); j++) {
+                phyc.Cp_coef_hT[i][j] = koeff_vect[j];
+                //cout << "ht = " << phyc.Cp_coef_hT[i][j] << "\n";
+            }
+        }
+
+        phyc.mol_weight = new double[num_gas_species];
+        auto elm = chec.chemkinReader->elements();
+        for (int i = 0; i < num_gas_species; i++) {
+            phyc.mol_weight[i] = 0;
+            auto elms = chec.chemkinReader->species()[i].thermo().getElements();
+            for (const auto& elm_i : elms) {
+                phyc.mol_weight[i] += elem_mol_weight[elm_i.first] * elm_i.second;
+            }
+            cout << komponents_str[i] << " = " << phyc.mol_weight[i] << endl;
+        }
+
+
+        for (int i = 0; i < num_gas_species; i++)
+            phyc.mol_weight[i] /= phyc.kMass;
+
+        // 8th coef. is for enthalpy calculation
+
+        GasTransport poly_obj;
+        for (int k = 0; k < num_gas_species; k++) {
+            //cout << "molw =" << phyc.mol_weight[k] << "\n";
+            //cout << "name = " << komponents_str[k] << "\n";
+            double logt = log(300);
+            /// cout << "lambda my i = " << get_Lambda(k, 300) << "\n";
+            poly_obj.getConductivityPolynomial(k, lambda_polynom[k]);
+            for (int k2 = 0; k2 < num_gas_species; k2++) {
+                //cout << k << " " << k2 << "  my Dij = " << Dij_func(k, k2, 300) << "\n";
+                poly_obj.getBinDiffusivityPolynomial(k, k2, diff_polynom[k][k2]);
+                //cout << k << " " << k2 << " not my Dij = " << Dij_func5(k, k2, 300) << "\n";
+            }
+            //cout << "\n\n";
+            ////cout << "lambda not my i = " << get_Lambda5(k, 300) << "\n";
+            //cout << "\n\n\n";
+        }
+
+
+        for (int component_i = 0; component_i < num_gas_species; component_i++)
+        {
+            for (int power_i = 0; power_i <= 8; power_i++)
+            {
+                // T < 1000 K
+                phyc.Cp_coef_lT[component_i][power_i] *= phyc.kR / phyc.mol_weight[component_i];
+                // T > 1000 K
+                phyc.Cp_coef_hT[component_i][power_i] *= phyc.kR / phyc.mol_weight[component_i];
+            }
+        }
 }
+   
 double get_dHiRT(double* Cp_coef, double T)
 {
     double Hi;
@@ -223,7 +362,6 @@ double get_Cpi(int component_i, double T)
     else
         Cpi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] * pow(T, 1) + phyc.Cp_coef_lT[i][2] * pow(T, 2)
         + phyc.Cp_coef_lT[i][3] * pow(T, 3) + phyc.Cp_coef_lT[i][4] * pow(T, 4);
-
 
     return Cpi;
 }
@@ -304,12 +442,21 @@ double get_Cv(int num_species, double* Y, double T)
 double get_Lambda(int i, double T)
 {
     double lambda_arg;
-
-    lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * log(T)
-        + lambda_polynom[i][2] * pow(log(T), 2) + lambda_polynom[i][3] * pow(log(T), 3);
-
+    double logt = log(T);
+    lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
+        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
     return exp(lambda_arg);
 }
+
+double get_Lambda5(int i, double T)
+{
+    double lambda_arg;
+    double logt = log(T);
+    lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
+        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
+    return pow(T, 0.5) * lambda_arg * pow(10, 5);
+}
+
 
 void allocate_memory() {
     Ystart = new double[num_gas_species];
@@ -368,12 +515,12 @@ void allocate_memory() {
     diff_polynom = new double** [num_gas_species];
     lambda_polynom = new double* [num_gas_species];
     for (int i = 0; i < num_gas_species; i++) {
-        lambda_polynom[i] = new double[4];
+        lambda_polynom[i] = new double[5];
         diff_polynom[i] = new double* [num_gas_species];
     }
     for (int i = 0; i < num_gas_species; i++) {
         for (int j = 0; j < num_gas_species; j++) {
-            diff_polynom[i][j] = new double[4];
+            diff_polynom[i][j] = new double[5];
         }
     }
 }

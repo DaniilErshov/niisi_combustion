@@ -4,6 +4,8 @@
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
 
+extern chem_struct chem;
+
 double my_mol_weight(int k);
 
 void make_averageY(double* Yavg, double* Yi, double* Yipred);
@@ -28,5 +30,6 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi);
 
 double Dij_func(int i, int j, double T);
 
+double Dij_func5(int i, int j, double T);
 
 void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);
