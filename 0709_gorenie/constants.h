@@ -52,12 +52,12 @@ struct che_consts
 
 struct chem_struct
 {
-    int ** products;
+    double** products;
     double** Arrh_params;
     bool* isReversible;
 
     bool* has_Third;
-    int** ThirdBodies;
+    double ** ThirdBodies;
     bool* has_low;
     double** Arrh_LP_params;
 
@@ -69,6 +69,5 @@ struct chem_struct
 
 };
 
-extern chem_struct chem;
 extern phy_consts phyc;
 extern che_consts chec;

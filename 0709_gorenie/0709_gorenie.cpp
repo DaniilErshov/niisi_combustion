@@ -72,7 +72,7 @@ int ida_steps;
 vector<double> x_vect;
 vector<double> Y_vect;
 vector<double> T_vect;
-
+struct chem_struct chem;
 vector<string> name_species;
 
 std::unordered_map<std::string, int> komponents{
@@ -89,6 +89,7 @@ map<string, double> elem_mol_weight{
     {"AR", 39.94},
     {"HE", 4.002602}
 };
+
 
 int main()
 {

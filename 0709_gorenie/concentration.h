@@ -3,7 +3,6 @@
 #include "chemkinReader.h"
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
-
 extern chem_struct chem;
 
 double my_mol_weight(int k);

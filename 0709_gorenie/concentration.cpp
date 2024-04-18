@@ -1,6 +1,4 @@
 #include "concentration.h"
-extern chem_struct chem;
-
 double my_mol_weight(int k) {
     return phyc.mol_weight[k];
 }
@@ -58,7 +56,7 @@ void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext)
     }
 }
 
-void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
 
     double d = 0.14;
     int k = 0, l = 0;
@@ -79,21 +77,28 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
     //define TROE pressure dependence
     for (int i = 0; i < num_react; i++) {
         auto& Arrhenius = chec.chemkinReader->reactions()[i].getArrhenius();
+        /*cout << "chec.chemkinReader->reactions()[i].hasLOW() = " << chec.chemkinReader->reactions()[i].hasLOW()
+            << " " << chem.has_low[i] << "\n";*/
         if (!chec.chemkinReader->reactions()[i].hasLOW())
         {
             forward[i] = Arrhenius.A * pow(Tcurr, Arrhenius.n)
                 * exp(-Arrhenius.E * pow(10, -3) / Tcurr / phyc.kRc);
             int jop = 0;
+            //cout << "Arrhenius.A = " << Arrhenius.A << " " << chem.Arrh_params[i][0] << "\n";
+            //cout << "Arrhenius.A = " << Arrhenius.n << " " << chem.Arrh_params[i][1] << "\n";
+            //cout << "Arrhenius.A = " << Arrhenius.E << " " << chem.Arrh_params[i][2] << "\n";
         }
         else {
             auto& Arrhenius_LP = chec.chemkinReader->reactions()[i].getLOW();
-
             k_inf_f = Arrhenius.A * pow(Tcurr, Arrhenius.n)
                 * exp(-Arrhenius.E * pow(10, -3) / Tcurr / phyc.kRc);
 
             k_0_f = Arrhenius_LP[0] * pow(Tcurr, Arrhenius_LP[1])
                 * exp(-Arrhenius_LP[2] * pow(10, -3) / Tcurr / phyc.kRc);
 
+            //cout << "ArrheniusLP.A = " << Arrhenius_LP[0] << " " << chem.Arrh_LP_params[i][0] << "\n";
+            //cout << "ArrheniusLP.A = " << Arrhenius_LP[1] << " " << chem.Arrh_LP_params[i][1] << "\n";
+            //cout << "ArrheniusLP.A = " << Arrhenius_LP[2] << " " << chem.Arrh_LP_params[i][2] << "\n";
 
             auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
 
@@ -103,10 +108,11 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
                 if (thridSpecie.first == "!M")
                     M_exist = 0;
             }
-
             if (M_exist) {
+                cout << "M_exist = " << M_exist << "\n";
                 for (const auto& specie : ThirdBodies) {
                     Pr_f += specie.second * y[komponents[specie.first]];
+                    cout << "specie = " << specie.first << " " << specie.second << "\n";
                     /*cout << "in THRID specie.first = " << specie.first << "\n";
                     cout << "in THRID specie.second = " << specie.second << "\n";*/
                 }
@@ -115,16 +121,25 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
                     if (!ThirdBodies.contains(name_sp)) {
                         //cout << "AFTER THRID specie.first = " << specie.name() << "\n";
                         Pr_f += y[komponents[name_sp]];
+                        cout << "specie = " << name_sp << " " << 1 << "\n";
                     }
+                }
+                cout << "\n\n\n";
+                for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                    cout << "specie my = " << komponents_str[k_spec] << " " << chem.ThirdBodies[i][k_spec] << "\n";
                 }
             }
 
             if (!M_exist) {
+                //cout << "\n\n\nM_exist = " << M_exist << "\n";
                 for (const auto& specie : ThirdBodies) {
                     if (specie.first != "!M") {
                         //cout << "!M = " << specie.first << "\n";
                         Pr_f = y[komponents[specie.first]];
                     }
+                }
+                for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                    //cout << "specie = " << komponents_str[k_spec] << " " << chem.ThirdBodies[i][k_spec] << "\n";
                 }
             }
             F_f = 1;
@@ -136,6 +151,10 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
                 double T3 = Troe_koeff[1];
                 double T1 = Troe_koeff[2];
                 double T2 = Troe_koeff[3];
+                //cout << "alpha= " << alpha << " " << chem.Troe_params[i][0] << "\n";
+                //cout << "T3 = " << T3 << " " << chem.Troe_params[i][1] << "\n";
+                //cout << "T1 = " << T1 << " " << chem.Troe_params[i][2] << "\n";
+                //cout << "T2 = " << T2 << " " << chem.Troe_params[i][3] << "\n";
 
                 Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1) + exp(-T2 / Tcurr);
                 c = -0.4 - 0.67 * log10(Fcent);
@@ -208,7 +227,10 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
             //cout << chec.chemkinReader->reactions()[i] << "\n";
             reverse[i] = 0;
         }
-
+        cout << "i = " << i << "\n";
+        cout << "forward true = " << forward[i] << "\n";
+        cout << "reverse true =  " << reverse[i] << "\n";
+        cout << "\n";
     }
 
 
@@ -220,7 +242,7 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
 
         double forw_slag = 1, rev_slag = 1;
         double mnozh_M = 0;
-
+        cout << "i = " << i << "\n";
         for (const auto& iti : react) {
             forw_slag *= pow(y[komponents[iti.first]], iti.second);
         }
@@ -228,22 +250,28 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
         for (const auto& iti : prod) {
             rev_slag *= pow(y[komponents[iti.first]], iti.second);
         }
-
+        cout << "forw = " << forw_slag << "\n";
+        cout << "rev_slag = " << rev_slag << "\n\n";
         equilib[i] = (forward[i] * forw_slag - reverse[i] * rev_slag);
         /*cout << "forward" << i << " = " << forward[i] << "\n";
         cout << "reverse" << i << " = " << reverse[i] << "\n";
         cout << " equilib" << i << " = " << equilib[i] << "\n\n\n";*/
         if (chec.chemkinReader->reactions()[i].hasThirdBody()) {
-
+            //cout << "i = " << i << "\n";
             for (const auto& specie : ThirdBodies) {
                 mnozh_M += specie.second * y[komponents[specie.first]];
+                //cout << specie.first << " = " << specie.second << "\n";
             }
             for (const auto& specie : species) {
                 if (!ThirdBodies.contains(specie.name()))
+                {
                     mnozh_M += y[komponents[specie.name()]];
+                    //cout << specie.name() << " = " << 1 << "\n";
+                }
             }
             equilib[i] *= mnozh_M;
         }
+       // cout << "equilib[i] " << i << " = " << equilib[i] << "\n";
         if (equilib[i] != equilib[i])
         {
             for (int i = 0; i < num_gas_species; i++)
@@ -276,11 +304,14 @@ void chem_vel_old(double* Sn, double* Hn, double* forward, double* reverse, doub
 
         }
     }
+    for (int r_i = 0; r_i < num_gas_species; r_i++) {
+        cout << r_i << " = " << yprime[r_i] << "\n";
+    }
 }
 
 
 //here send molar_cons
-void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
+void chem_vels(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime) {
 
     double d = 0.14;
     int k = 0, l = 0;
@@ -308,30 +339,32 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
         }
         else {
             k_inf_f = chem.Arrh_params[i][0] * pow(Tcurr, chem.Arrh_params[i][1])
-                * exp(chem.Arrh_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
+                * exp(-chem.Arrh_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
 
             k_0_f = chem.Arrh_LP_params[i][0] * pow(Tcurr, chem.Arrh_LP_params[i][1])
                 * exp(-chem.Arrh_LP_params[i][2] * pow(10, -3) / Tcurr / phyc.kRc);
-
-
 
             Pr_f = 0;
 
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 if (chem.ThirdBodies[i][k_spec] != 0)  
-                    Pr_f += chem.ThirdBodies[i][k_spec]* y[k_spec];
+                    Pr_f += chem.ThirdBodies[i][k_spec] * y[k_spec];
                 /*cout << "in THRID specie.first = " << specie.first << "\n";
                 cout << "in THRID specie.second = " << specie.second << "\n";*/
             }
 
             F_f = 1;
             Pr_f *= k_0_f / k_inf_f;
+            double alpha;
+            double T3;
+            double T1;
+            double T2 ;
             if (chem.has_Troe[i] && Pr_f > pow(10, -30))
             {
-                double alpha = chem.Troe_params[i][0];
-                double T3 = chem.Troe_params[i][1];
-                double T1 = chem.Troe_params[i][2];
-                double T2 = chem.Troe_params[i][3];
+                alpha = chem.Troe_params[i][0];
+                T3 = chem.Troe_params[i][1];
+                T1 = chem.Troe_params[i][2];
+                T2 = chem.Troe_params[i][3];
 
                 Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1) + exp(-T2 / Tcurr);
                 c = -0.4 - 0.67 * log10(Fcent);
@@ -344,6 +377,14 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
 
 
             forward[i] = k_inf_f * (Pr_f / (1 + Pr_f)) * F_f;
+            if (forward[i] != forward[i])
+            {
+                for (int k_spec = 0; k_spec < num_gas_species; k_spec++)
+                {
+                    cout << "yi = " << y[k_spec] << "\n";
+                }
+                int jop = 0;
+            }
         }
     }
 
@@ -375,50 +416,87 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
                 }
                 sumv += chem.products[i][k_spec];
             }
-
-
             dHiRT = get_dHiRT(Hn, Tcurr);
             dSiR = get_dSiR(Sn, Tcurr);
             Kpi = exp(dSiR - dHiRT);
             Kci = Kpi * pow(P / phyc.kR / Tcurr, sumv);
             reverse[i] = forward[i] / Kci;
+            if (reverse[i] != reverse[i])
+            {
+                for (int k_spec = 0; k_spec < num_gas_species; k_spec++)
+                {
+                    cout << "yi = " << y[k_spec] << "\n";
+                }
+                int jop = 0;
+            }
         }
         else {
             //cout << chec.chemkinReader->reactions()[i] << "\n";
             reverse[i] = 0;
         }
-
+        //cout << "i = " << i << "\n";
+        //cout << "forward my = " << forward[i] << "\n";
+        //cout << "reverse my = " << reverse[i] << "\n";
+        //cout << "chem.Troe_params[i][0] = " << chem.Troe_params[i][0] << "\n";
+        //cout << "chem.Troe_params[i][0] = " << chem.Troe_params[i][1] << "\n";
+        //cout << "chem.Troe_params[i][0] = " << chem.Troe_params[i][2] << "\n";
+        //cout << "chem.Troe_params[i][0] = " << chem.Troe_params[i][3] << "\n";
+        //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        //    if (chem.products[i][k_spec] != 0) {
+        //        cout << komponents_str[k_spec] << " " << chem.products[i][k_spec] << "\n";
+        //    }
+        //}
+        ////cout << "\nthird\n";
+        //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        //    if (chem.ThirdBodies[i][k_spec] != 0) {
+        //        cout << komponents_str[k_spec] << "  " << chem.ThirdBodies[i][k_spec] << "n";
+        //    }
+        //}
+        //cout << "\n\n\n";
     }
-
 
     //find equilib konstant with THIRDBODY
     for (int i = 0; i < num_react; i++) {
         double forw_slag = 1, rev_slag = 1;
         double mnozh_M = 0;
         double koeff;
+        cout << "check rev forw = " << i << "\n";
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
             koeff = chem.products[i][k_spec];
-            if (koeff > 0) forw_slag *= pow(y[k_spec], koeff);
-            if (koeff < 0) rev_slag *= pow(y[k_spec], -koeff);
+            if (koeff > 0.) {
+                forw_slag *= pow(y[k_spec], koeff);
+            }
 
+            if (koeff < 0.) { 
+                rev_slag *= pow(y[k_spec], abs(koeff)); 
+            }
         }
-
+        cout << "forw = " << forw_slag << "\n";
+        cout << "rev_slag = " << rev_slag << "\n";
         equilib[i] = (forward[i] * forw_slag - reverse[i] * rev_slag);
-        /*cout << "forward" << i << " = " << forward[i] << "\n";
-        cout << "reverse" << i << " = " << reverse[i] << "\n";
-        cout << " equilib" << i << " = " << equilib[i] << "\n\n\n";*/
+        //cout << "forward" << i << " = " << forward[i] << "\n";
+        //cout << "reverse" << i << " = " << reverse[i] << "\n";
+        //cout << " equilib" << i << " = " << equilib[i] << "\n\n\n";
+
         if (chem.has_Third[i]) {
+            //cout << "has_third i = " << i << "\n";
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 if (chem.ThirdBodies[i][k_spec] != 0)
+                {
                     mnozh_M += chem.ThirdBodies[i][k_spec] * y[k_spec];
+                    //cout << komponents_str[k_spec] << " = " << chem.ThirdBodies[i][k_spec] << "\n";
+                }
+
             }
+            cout << "MnozhM = " << mnozh_M << "\n\n";
             equilib[i] *= mnozh_M;
         }
+        //cout << "equilib[i] " << i << " = " << equilib[i] << "\n";
         if (equilib[i] != equilib[i])
         {
-            for (int i = 0; i < num_gas_species; i++)
+            for (int k_spec = 0; k_spec < num_gas_species; k_spec++)
             {
-                cout << "yi = " << y[i] << "\n";
+                cout << "yi = " << y[k_spec] << "\n";
             }
             int jop = 0;
         }
@@ -434,11 +512,12 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
         yprime[sp_i] = 0;
     }
 
-    for (int r_i = 0; r_i < num_react; r_i++) {
-        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            if (chem.ThirdBodies[r_i][k_spec] != 0) 
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        for (int r_i = 0; r_i < num_react; r_i++) {
+            if (chem.products[r_i][k_spec] != 0)
                 yprime[k_spec] += equilib[r_i] * chem.products[r_i][k_spec];
         }
+        cout << k_spec << " = " << yprime[k_spec] << "\n";
     }
 }
 
