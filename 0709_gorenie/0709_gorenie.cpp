@@ -155,14 +155,14 @@ int main()
     double t_Y = pow(10, -7), t_full = pow(10, -6);
     T_center = T_vect[N_center];
 
-    ida_steps = 5;
+    ida_steps = 2;
     eps = 0;
     integrate_All_IDA(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-    ida_steps = 80;
+    ida_steps = 50;
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
@@ -175,7 +175,7 @@ int main()
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
     Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 5, 1, T_center);
-    ida_steps = 20;
+    ida_steps = 50;
     eps = pow(10, -3);
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
