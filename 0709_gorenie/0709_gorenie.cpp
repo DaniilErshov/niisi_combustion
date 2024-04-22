@@ -66,6 +66,11 @@ double* Ystart;
 double* Yend;
 double eps = pow(10, -8);
 double* X;
+int jactimes = -1;
+
+
+double ftol;
+double stoler;
 int num_gas_species;
 int num_react ;
 int ida_steps;
@@ -73,6 +78,13 @@ vector<double> x_vect;
 vector<double> Y_vect;
 vector<double> T_vect;
 
+vector<vector<double>> Cp_arr;
+vector<vector<double>> Lambda_arr_r;
+vector<vector<double>> Lambda_arr_l;
+vector<vector<vector<double>>> Dij_arr_r;
+vector<vector<vector<double>>> Dij_arr_l;
+
+struct chem_struct chem;
 vector<string> name_species;
 
 std::unordered_map<std::string, int> komponents{
@@ -89,6 +101,7 @@ map<string, double> elem_mol_weight{
     {"AR", 39.94},
     {"HE", 4.002602}
 };
+
 
 int main()
 {
@@ -108,14 +121,31 @@ int main()
     double T_finish = Tfinish;
     double T_center;
     double koeff_topl = 1;
-    int N_x = 19;
+    int N_x = 8;
 
     x_vect.resize(N_x);
     Y_vect.resize(N_x * num_gas_species);
     T_vect.resize(N_x);
+    Cp_arr.resize(N_x);
+    Lambda_arr_r.resize(N_x);
+    Lambda_arr_l.resize(N_x);
+    Dij_arr_r.resize(N_x);
+    Dij_arr_l.resize(N_x);
+    for (int i = 0; i < N_x; i++) {
+        Cp_arr[i].resize(num_gas_species);
+        Lambda_arr_r[i].resize(num_gas_species);
+        Lambda_arr_l[i].resize(num_gas_species);
+        Dij_arr_r[i].resize(num_gas_species);
+        Dij_arr_l[i].resize(num_gas_species);
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+            Dij_arr_r[i][k_spec].resize(num_gas_species);
+            Dij_arr_l[i][k_spec].resize(num_gas_species);
+        }
+    }
+
     makeYstart(koeff_topl, Ystart);
     Find_final_state_IDA(T_start, Tend, Ystart, Yend);
-    M = 60 * get_rho(Ystart, Tstart);
+    M = 30 * get_rho(Ystart, Tstart);
     int j_t = 1;
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
     Tfinish = Tend;
@@ -124,21 +154,15 @@ int main()
 
     double t_Y = pow(10, -7), t_full = pow(10, -6);
     T_center = T_vect[N_center];
-    eps = 0;
-    ida_steps = 120;
-  /*  integrate_Y_IDA(N_x, x_vect,
-        T_vect, Y_vect, M, N_center, Ystart, t_Y);
-    Write_to_file("detail/after_Y", fout, x_vect,
-        T_vect, Y_vect, Y_vect, M, N_x, 1);*/
 
-    ida_steps = 10;
+    ida_steps = 5;
     eps = 0;
     integrate_All_IDA(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-    ida_steps = 20;
+    ida_steps = 80;
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
@@ -147,19 +171,11 @@ int main()
     eps = pow(10, -3);
     Integrate_Kinsol(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 6);
-
-    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 3, 1, T_center);
-
-
-    ida_steps = 40;
-    eps = pow(10, -3);
-    integrate_All_IDA_M(N_x, x_vect,
-        T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-    Write_to_file("detail/Ida_2", fout, x_vect,
+    Write_to_file("detail/KINSOL1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 1, 1, T_center);
-    ida_steps = 15;
+    Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 5, 1, T_center);
+    ida_steps = 20;
     eps = pow(10, -3);
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
@@ -170,6 +186,8 @@ int main()
     int number_epoch = 0;
     int add_cell = 3;
     int add_cell_start = 2;
+    ftol = pow(10, -6);
+    stoler = pow(10, -20);
     while (vect_size_temp != x_vect.size())
     {
         vect_size_temp = x_vect.size();
@@ -195,8 +213,12 @@ int main()
         number_epoch++;
         add_cell = 1;
     }
-
-
+    ftol = pow(10, -12);
+    stoler = pow(10, -25);
+    Integrate_Kinsol(N_x, x_vect,
+        T_vect, Y_vect, M, N_center, Ystart, 6);
+    Write_to_file("detail/KINSOL", fout, x_vect,
+        T_vect, Y_vect, Y_vect, M, N_x, 1);
     free_memory();
     return 0;
 }

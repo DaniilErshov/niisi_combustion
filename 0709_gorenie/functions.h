@@ -78,7 +78,8 @@ extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
 extern double** Dij_res;
-
+extern double ftol;
+extern double stoler;
 extern double* Yi;
 extern double* Yiprev;
 extern double* Yinext;
@@ -118,6 +119,13 @@ extern double* ydot;
 extern double*** diff_polynom;
 extern double** lambda_polynom;
 extern double* mol_weight;
+extern int jactimes;
+extern vector<vector<double>> Cp_arr;
+extern vector<vector<double>> Lambda_arr_r;
+extern vector<vector<double>> Lambda_arr_l;
+extern vector<vector<vector<double>>> Dij_arr_r;
+extern vector<vector<vector<double>>> Dij_arr_l;
+
 extern int ida_steps;
 extern double eps;
 extern vector<string> name_species;
@@ -137,6 +145,7 @@ typedef struct {
     int NEQ;
     int NEQ_Y;
     int N_centr;
+    void* sun_mem;
     realtype Tl;
     realtype M;
     realtype T_center;
@@ -147,7 +156,7 @@ typedef struct {
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
 double F_right(UserData data,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);
 
 double F_rightY(UserData data, int k_spec,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext);
@@ -248,3 +257,6 @@ int Integrate_Kinsol_withoutM(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
 
 static int func_kinsol_withoutM(N_Vector u, N_Vector f, void* user_data);
+
+double F_right_IDA(UserData data,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);

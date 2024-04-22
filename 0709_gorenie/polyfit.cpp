@@ -94,18 +94,12 @@ double polyfit(size_t n, size_t deg, const double* xp, const double* yp,
         B[i][deg + 1] = Y[i];
     }
     double* A1 = new double[deg + 1];
-    //std::cout << "The polynomial fit is given by the equation:\n";
-    //printMatrix(n + 1, n + 2, B);
+
     gaussEliminationLS(deg + 1, deg + 2, B, A1);
     for (int i = 0; i <= deg; i++) {
         pp[i] = A1[i];
     }
-   /* std::cout << "wp0 = " << wp[0] << "\n";
-    std::cout << "in fake pp\n";
-    for (int i = 0; i <= deg; i++)
-    {
-        std::cout << "i = " << i << " = " << pp[i] << "\n";
-    }*/
+
     double res = 0;
     for (int j = 0; j < n; j++) {
         double yj = 0;

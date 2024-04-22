@@ -15,9 +15,9 @@ double get_dHiRT(double* Cp_coef, double T);
 double get_dSiR(double* Cp_coef, double T);
 double get_dCpi(double* Cp_coef, double T);
 double get_Lambda(int i, double T);
+double get_Lambda5(int i, double T);
 void allocate_memory();
 void free_memory();
-double get_Lambda5(int i, double T);
 
 struct phy_consts
 {
@@ -52,23 +52,22 @@ struct che_consts
 
 struct chem_struct
 {
-    int ** products;
+    double** products;
     double** Arrh_params;
     bool* isReversible;
 
     bool* has_Third;
-    int** ThirdBodies;
+    double ** ThirdBodies;
     bool* has_low;
     double** Arrh_LP_params;
 
     bool* has_Troe;
     double** Troe_params;
-
+    double* T_comon;
     bool* M_exist;
 
 
 };
 
-extern chem_struct chem;
 extern phy_consts phyc;
 extern che_consts chec;

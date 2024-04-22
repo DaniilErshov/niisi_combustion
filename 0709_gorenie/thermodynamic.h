@@ -16,3 +16,7 @@ double myget_Cp(int num_gas_speciens, double* Y, double T);
 double Cp_all(double T, double* Y);
 
 double Lambda_All(double* X, double T);
+
+double get_Cp(const vector<double>& Cp_arr, double T, double* Y);
+
+double Lambda_All(const vector<double>& Lambda_arr, double* X);

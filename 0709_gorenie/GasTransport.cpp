@@ -270,7 +270,6 @@ void GasTransport::fitProperties(MMCollisionInt& integrals)
 
 
     for (size_t k = 0; k < num_gas_species; k++) {
-        cout << "\n\n\n\n\n\nmol_weight = " << phyc.mol_weight[k] << "\n";
         double tstar = Boltzmann * 298.0 / m_eps[k];
         // Scaling factor for temperature dependence of z_rot. [Kee2003] Eq.
         // 12.112 or [Kee2017] Eq. 11.115
