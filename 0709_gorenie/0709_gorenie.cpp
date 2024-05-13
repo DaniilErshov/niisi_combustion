@@ -142,9 +142,44 @@ int main()
             Dij_arr_l[i][k_spec].resize(num_gas_species);
         }
     }
+    //Get_molar_cons(Xi, Yi, 2282.787);
+    //chem_vel(Sn, Hn, forward_arr, reverse_arr, equilib_arr, 2282.787, Xi, ydot);
 
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        fout.open("lambdas/lambda_" + komponents_str[k_spec] + ".dat");
+        string title2 = R"(VARIABLES= "T", "lambda")";
+        fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+        fout << title2 << endl;
+        for (double T_tmp = 300; T_tmp < 3000; T_tmp += 10) {
+            fout << T_tmp << " " << get_Lambda5(k_spec, T_tmp) << "\n";
+        }
+        fout.close();
+    }
+
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        for (int k_spec2 = 0; k_spec2 < num_gas_species; k_spec2++) {
+            fout.open("diffs/diff_" + komponents_str[k_spec] + "_" + komponents_str[k_spec2] + ".dat");
+            string title2 = R"(VARIABLES= "T", "diff_)" + komponents_str[k_spec] + "_" + komponents_str[k_spec2] + R"(")";
+            fout << "TITLE=\"" << "Graphics" << "\"" << endl;
+            fout << title2 << endl;
+            for (double T_tmp = 300; T_tmp < 3000; T_tmp += 10) {
+                fout << T_tmp << " " << Dij_func5(k_spec, k_spec2, T_tmp) << "\n";
+            }
+            fout.close();
+        }
+    }
+    set_Dij_res(1807.936);
+    Get_mole_fr(Xi, Yi);
+    Get_mole_fr(Xinext, Yinext);
+    get_grad(gradX, Xi, Xinext, 0.165625, 0.1657552);
+    make_averageY(Y_tmp, Yi, Yinext);
+    for (int k = 0; k < num_gas_species; k++) {
+      YkVk_func(k, 1807.936, Yi, gradX, Xi, Yi);
+    }
+    cout << "lambda = " << Lambda_All(Xi, 1807.936) << "\n";
     makeYstart(koeff_topl, Ystart);
     Find_final_state_IDA(T_start, Tend, Ystart, Yend);
+    Find_final_state_KINSOL(T_start, Tend, Ystart, Yend);
     M = 30 * get_rho(Ystart, Tstart);
     int j_t = 1;
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
@@ -154,15 +189,14 @@ int main()
 
     double t_Y = pow(10, -7), t_full = pow(10, -6);
     T_center = T_vect[N_center];
-
-    ida_steps = 2;
+    ida_steps = 20;
     eps = 0;
     integrate_All_IDA(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-    ida_steps = 50;
+    ida_steps = 40;
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
@@ -173,15 +207,15 @@ int main()
         T_vect, Y_vect, M, N_center, Ystart, 6);
     Write_to_file("detail/KINSOL1", fout, x_vect,
         T_vect, Y_vect, Y_vect, M, N_x, 1);
-
+    cout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
     Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, 5, 1, T_center);
-    ida_steps = 50;
+    ida_steps = 40;
     eps = pow(10, -3);
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
     Integrate_Kinsol(N_x, x_vect,
         T_vect, Y_vect, M, N_center, Ystart, 6);
-
+    cout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
     int vect_size_temp = 0;
     int number_epoch = 0;
     int add_cell = 3;
@@ -194,14 +228,15 @@ int main()
         cout << "Nx = " << vect_size_temp << "\n";
         if (number_epoch > 8) add_cell = 0;
         if (number_epoch > 3) add_cell_start = 0;
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, add_cell, add_cell_start, T_center);
+        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.025, add_cell, add_cell_start, T_center);
         ida_steps = 15;
         eps = pow(10, -3);
        /* integrate_All_IDA_M(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 1, t_full);*/
         Integrate_Kinsol(N_x, x_vect,
             T_vect, Y_vect, M, N_center, Ystart, 6);
-        Write_to_file("detail/KINSOL", fout, x_vect,
+        cout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
+        Write_to_file("detail/KINSOL" + to_string(x_vect.size()), fout, x_vect,
             T_vect, Y_vect, Y_vect, M, N_x, 1);
 
         fout.open("detail/M_.dat");
@@ -213,6 +248,15 @@ int main()
         number_epoch++;
         add_cell = 1;
     }
+
+    fout.open("detail/v_last_.dat");
+    for (int i = 0; i < x_vect.size(); i++) {
+        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+            Yend[k_spec] = Y_vect[k_spec + i * (num_gas_species)];
+        }
+        fout << x_vect[i] << " " << M / get_rho(Yend, T_vect[i]) << "\n";
+    }
+    fout.close();
     ftol = pow(10, -12);
     stoler = pow(10, -25);
     Integrate_Kinsol(N_x, x_vect,

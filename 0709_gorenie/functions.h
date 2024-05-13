@@ -260,3 +260,8 @@ static int func_kinsol_withoutM(N_Vector u, N_Vector f, void* user_data);
 
 double F_right_IDA(UserData data,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);
+
+
+int Find_final_state_KINSOL(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
+
+static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data);

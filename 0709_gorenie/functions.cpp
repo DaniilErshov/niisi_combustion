@@ -24,7 +24,7 @@ double get_M(double Tprev, double T, double Tnext,
     double YkVk_slag = 0;
     set_Dij_res(T);
     for (int k = 0; k < num_gas_species; k++) {
-        YkVk[k] = YkVk_func(k, T, Yi, gradX, Xi);
+        YkVk[k] = YkVk_func(k, T, Yi, gradX, Xi, Yi);
         Vc -= YkVk[k];
     }
     for (int i = 0; i < 9; i++) {
@@ -76,25 +76,25 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     for (int i = 0; i < Nx; i++) {
         x_vect[i] = h * i;
     }
- //   x_vect = { 0.0,
- //0.05,
- //0.098,
- //0.1,
- //0.1083333,
- //0.1166667,
- //0.1208333,
- //0.125,
- //0.1270833,
- //0.1291667,
- //0.13125,
- //0.1333333,
- //0.1416667,
- //0.15,
- //0.1666667,
- //0.1833333,
- //0.2,
- //0.25,
- //0.3 };
+    //   x_vect = { 0.0,
+    //0.05,
+    //0.098,
+    //0.1,
+    //0.1083333,
+    //0.1166667,
+    //0.1208333,
+    //0.125,
+    //0.1270833,
+    //0.1291667,
+    //0.13125,
+    //0.1333333,
+    //0.1416667,
+    //0.15,
+    //0.1666667,
+    //0.1833333,
+    //0.2,
+    //0.25,
+    //0.3 };
 
     for (int i = 0; i < Nx; i++) {
 
@@ -318,12 +318,12 @@ double get_M(double* Yiprev, double* Yi, double* Yinext,
     double Vc = 0;
     double YkVk_slag = 0;
     for (int k = 0; k < num_gas_species; k++) {
-        YkVk_slag = YkVk_func(k, T, Yi, gradX, Xi);
+        YkVk_slag = YkVk_func(k, T, Yi, gradX, Xi, Yi);
         Vc -= YkVk_slag;
     }
 
     for (int k = 0; k < num_gas_species; k++) {
-        YkVk_slag = YkVk_func(k, T, Yi, gradX, Xi) + Vc * Yi[k];
+        YkVk_slag = YkVk_func(k, T, Yi, gradX, Xi, Yi) + Vc * Yi[k];
         slag_diff += rho * YkVk_slag * myget_Cpi(k, T) * dTdx;
         slag_chem += ydot[k] * myget_Hi(k, T) * my_mol_weight(k);
     }
@@ -357,7 +357,7 @@ double F_right(UserData data,
     double YkVk_slag = 0;
     set_Dij_res(T);
     for (int k = 0; k < num_gas_species; k++) {
-        YkVk[k] = YkVk_func(k, T, Yi, gradX, Xi);
+        YkVk[k] = YkVk_func(k, T, Yi, gradX, Xi, Yi);
         Vc -= YkVk[k];
     }
     for (int i = 0; i < 9; i++) {
@@ -369,12 +369,12 @@ double F_right(UserData data,
         if (T > chec.chemkinReader->species()[k].thermo().getTCommon())
             for (int i = 0; i < 9; i++) {
                 Hn[i] += ydot[k] * phyc.Cp_coef_hT[k][i] * my_mol_weight(k);
-                Cpn[i] += rho * YkVk[k] * phyc.Cp_coef_hT[k][i] * dTdx;
+                Cpn[i] += rho * (YkVk[k] + Yi[k] * Vc) * phyc.Cp_coef_hT[k][i] * dTdx;
             }
         else {
             for (int i = 0; i < 9; i++) {
                 Hn[i] += ydot[k] * phyc.Cp_coef_lT[k][i] * my_mol_weight(k);
-                Cpn[i] += rho * YkVk[k] * phyc.Cp_coef_lT[k][i] * dTdx;
+                Cpn[i] += rho * (YkVk[k] + Yi[k] * Vc) * phyc.Cp_coef_lT[k][i] * dTdx;
             }
         }
         //slag_diff += rho * data->YkVk[k] * myget_Cpi(k, T)  * dTdx;
@@ -1018,7 +1018,7 @@ void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, doubl
     Vc_side = 0;
     set_Dij_res((Tcurr + Tnext) / 2.);
     for (int k = 0; k < num_gas_species; k++) {
-        Ykvk_side[k] = YkVk_func(k, (Tcurr + Tnext) / 2., Y_tmp_side, gradX_side, X_tmp_side);
+        Ykvk_side[k] = YkVk_func(k, (Tcurr + Tnext) / 2., Yi, gradX_side, X_tmp_side, Y_tmp_side);
         Vc_side -= Ykvk_side[k];
         //cout << "Ykvk = " << Ykvk_side[k] << "\n";
     }
@@ -1607,6 +1607,155 @@ static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr
     return(0);
 }
 
+
+int Find_final_state_KINSOL(double& Tinitial, double& Tend, double* Y_vect, double* Y_end)
+{
+    SUNContext sunctx;
+    realtype fnormtol, scsteptol;
+    N_Vector res_vect, s, c;
+    int glstr, mset, retval;
+    void* kmem;
+    SUNMatrix J;
+    SUNLinearSolver LS;
+    realtype* yval, * cval, * sval;
+    UserData data;
+    data = (UserData)malloc(sizeof * data);
+
+
+    int NEQ_Y = num_gas_species;
+    int NEQ = NEQ_Y + 1;
+    res_vect = NULL;
+    s = c = NULL;
+    kmem = NULL;
+    J = NULL;
+    LS = NULL;
+    /* Create the SUNDIALS context that all SUNDIALS objects require */
+    retval = SUNContext_Create(NULL, &sunctx);
+    if (check_retval(&retval, "SUNContext_Create", 1)) return(1);
+    res_vect = N_VNew_Serial(NEQ, sunctx);
+    if (check_retval((void*)res_vect, "N_VNew_Serial", 0)) return(1);
+
+    s = N_VNew_Serial(NEQ, sunctx);
+    if (check_retval((void*)s, "N_VNew_Serial", 0)) return(1);
+
+    c = N_VNew_Serial(NEQ, sunctx);
+    if (check_retval((void*)c, "N_VNew_Serial", 0)) return(1);
+
+    N_VConst(ONE, s); /* no scaling */
+
+    /* User data */
+
+    yval = N_VGetArrayPointer(res_vect);
+    cval = N_VGetArrayPointer(c);
+    sval = N_VGetArrayPointer(s);
+    int number_spec = 0;
+    for (int i = 1; i < NEQ; i++) {
+        Ith(res_vect, i) = Y_end[i - 1];
+        Ith(c, i) = 0;
+        Ith(s, i) = 1;
+    }
+    Ith(res_vect, NEQ) = Tend;
+    Ith(c, NEQ) = 0;
+    Ith(s, NEQ) = 1;
+    fnormtol = pow(10, -7); scsteptol = pow(10, -10);
+    data->NEQ = NEQ;
+    data->Tl = Tinitial;
+
+    for (int i = 0; i < num_gas_species; i++) {
+        Yi[i] = Y_end[i];
+        Yiprev[i] = Y_vect[i];
+        //cout << i << " = " << data->Yi[i] << endl;
+    }
+
+    kmem = KINCreate(sunctx);
+    if (check_retval((void*)kmem, "KINCreate", 0)) return(1);
+
+    retval = KINSetUserData(kmem, data);
+    if (check_retval(&retval, "KINSetUserData", 1)) return(1);
+    retval = KINSetConstraints(kmem, c);
+    if (check_retval(&retval, "KINSetConstraints", 1)) return(1);
+    retval = KINSetFuncNormTol(kmem, fnormtol);
+    if (check_retval(&retval, "KINSetFuncNormTol", 1)) return(1);
+    retval = KINSetScaledStepTol(kmem, scsteptol);
+    if (check_retval(&retval, "KINSetScaledStepTol", 1)) return(1);
+    KINSetNumMaxIters(kmem, 1000);
+    retval = KINInit(kmem, func_final_state_kinsol, res_vect);
+    if (check_retval(&retval, "KINInit", 1)) return(1);
+
+
+    J = SUNDenseMatrix(NEQ, NEQ, sunctx);
+    if (check_retval((void*)J, "SUNDenseMatrix", 0)) return(1);
+
+    /* Create dense SUNLinearSolver object */
+    LS = SUNLinSol_Dense(res_vect, J, sunctx);
+    if (check_retval((void*)LS, "SUNLinSol_Dense", 0)) return(1);
+
+    /* Attach the matrix and linear solver to KINSOL */
+    retval = KINSetLinearSolver(kmem, LS, J);
+    if (check_retval(&retval, "KINSetLinearSolver", 1)) return(1);
+
+    glstr = 0;
+    mset = 1000;
+
+    retval = KINSol(kmem, res_vect, glstr, s, s);
+    if (check_retval(&retval, "KINSol", 1)) return(1);
+    cout << "retval = " << retval << "\n";
+    
+    for (int i = 0; i < num_gas_species; i++) {
+        Y_end[i] = Ith(res_vect, i + 1);
+        cout << komponents_str[i] << " = " << Y_end[i] << "\n";
+    }
+    /* Free memory */
+
+    printf("\nFinal statsistics:\n");
+    retval = KINPrintAllStats(kmem, stdout, SUN_OUTPUTFORMAT_TABLE);
+    N_VDestroy(res_vect);
+    N_VDestroy(s);
+    N_VDestroy(c);
+    KINFree(&kmem);
+    SUNLinSolFree(LS);
+    SUNMatDestroy(J);
+    free(data);
+    SUNContext_Free(&sunctx);
+    return 0;
+}
+
+static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data)
+{
+    realtype* yval, * ypval, * rval;
+    UserData data;
+    double Temp;
+    double M;
+    data = (UserData)user_data;
+    int j;
+    yval = N_VGetArrayPointer(u);
+    rval = N_VGetArrayPointer(f);
+
+    for (int j = 0; j < num_gas_species; j++) {
+        Yi[j] = yval[j];
+    }
+    Temp = yval[num_gas_species];
+    Get_molar_cons(Xi, Yi, Temp);
+    chem_vel(Sn, Hn, forward_arr, reverse_arr, equilib_arr, Temp, Xi, ydot);
+
+    double rho = get_rho(Yi, Temp);
+    for (j = 0; j < num_gas_species; j++) {
+        rval[j] = ydot[j] * phyc.mol_weight[j] * pow(10, 6);
+    }
+    double sum = 0;
+
+    double Cp = get_Cp(num_gas_species, Yi, Temp);
+    double sum2;
+
+    sum2 = get_enthalpy(num_gas_species, Yiprev, data->Tl);
+
+    sum = get_enthalpy(num_gas_species, Yi, Temp);
+
+    rval[num_gas_species] = (sum - sum2);
+    return(0);
+}
+
+
 void makeYstart(double koeff_topl, double* Ystart) {
 
     /* Ystart[0] = koeff_topl * 2.0 / (koeff_topl * 2. + 1. + 3.76);
@@ -2172,4 +2321,3 @@ void set_Dij_res(double T) {
         }
     }
 }
-

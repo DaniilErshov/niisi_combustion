@@ -87,6 +87,20 @@ void init_consts(int& num_gas_species, int& num_react) {
 
     chec.chemkinReader->read();
     //chec.chemkinReader->check();
+    //cout << "37\n";
+    //cout << chec.chemkinReader->reactions()[37] << "\n";
+
+    cout << "16\n";
+    cout << chec.chemkinReader->reactions()[16] << "\n";
+
+    cout << "17\n";
+    cout << chec.chemkinReader->reactions()[17] << "\n";
+
+    cout << "193\n";
+    cout << chec.chemkinReader->reactions()[193] << "\n";
+
+
+
     std::cout << "NEW BLOCK" << std::endl;
     num_react = chec.chemkinReader->reactions().size();
     num_gas_species = chec.chemkinReader->species().size();
@@ -139,108 +153,6 @@ void init_consts(int& num_gas_species, int& num_react) {
     bool M_exist = 1;
     auto& species = chec.chemkinReader->species();
 
-    {//for (int i = 0; i < num_react; i++) {
-
-    //    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-    //        chem.ThirdBodies[i][k_spec] = 0;
-    //        chem.products[i][k_spec] = 0;
-    //    }
-
-    //    auto& prod = chec.chemkinReader->reactions()[i].getProducts();
-    //    auto& react = chec.chemkinReader->reactions()[i].getReactants();
-    //    for (const auto& iti : prod) {
-    //        chem.products[i][komponents[iti.first]] += iti.second;
-    //        //cout << "chem.products[i][komponents[iti.first]] = " << chem.products[i][komponents[iti.first]] << "\n";
-    //    }
-
-    //    for (const auto& iti : react) {
-    //        chem.products[i][komponents[iti.first]] -= iti.second;
-    //        //cout << "chem.products[i][komponents[iti.first]] = " << chem.products[i][komponents[iti.first]] << "\n";
-    //    }
-    //    auto& Arrhenius = chec.chemkinReader->reactions()[i].getArrhenius();
-    //    chem.Arrh_params[i][0] = Arrhenius.A;
-    //    chem.Arrh_params[i][1] = Arrhenius.n;
-    //    chem.Arrh_params[i][2] = Arrhenius.E;
-    //    chem.Arrh_LP_params[i][0] = 0;
-    //    chem.Arrh_LP_params[i][1] = 0;
-    //    chem.Arrh_LP_params[i][2] = 0;
-
-
-    //    chem.has_low[i] = chec.chemkinReader->reactions()[i].hasLOW();
-    //    chem.has_Third[i] = chec.chemkinReader->reactions()[i].hasThirdBody();
-    //    chem.has_Troe[i] = chec.chemkinReader->reactions()[i].hasTROE();
-    //    chem.isReversible[i] = chec.chemkinReader->reactions()[i].isReversible();
-    //    if (chem.has_Troe[i]) {
-    //        const auto& Troe_koeff = chec.chemkinReader->reactions()[i].getTROE();
-    //        chem.Troe_params[i][0] = Troe_koeff[0];
-    //        chem.Troe_params[i][1] = Troe_koeff[1];
-    //        chem.Troe_params[i][2] = Troe_koeff[2];
-    //        chem.Troe_params[i][3] = Troe_koeff[3];
-    //    }
-    //    if (chec.chemkinReader->reactions()[i].hasThirdBody()){
-    //        auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
-    //        cout << "i = " << i << "\n";
-    //        for (const auto& specie : ThirdBodies) {
-    //            chem.ThirdBodies[i][komponents[specie.first]] = specie.second;
-    //        }
-    //        for (const auto& specie : species) {
-    //            const auto& name_sp = specie.name();
-    //            if (!ThirdBodies.contains(name_sp)) {
-    //                chem.ThirdBodies[i][komponents[name_sp]] = 1;
-    //            }
-    //        }
-    //    }
-    //    if (chec.chemkinReader->reactions()[i].hasLOW()) {
-    //        auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
-
-    //        M_exist = 1;
-    //        for (const auto& thridSpecie : ThirdBodies) {
-    //            if (thridSpecie.first == "!M")
-    //                M_exist = 0;
-    //        }
-    //        chem.M_exist[i] = M_exist;
-    //        if (M_exist) {
-    //            for (const auto& specie : ThirdBodies) {
-    //                chem.ThirdBodies[i][komponents[specie.first]] = specie.second;
-    //            }
-    //            for (const auto& specie : species) {
-    //                const auto& name_sp = specie.name();
-    //                if (!ThirdBodies.contains(name_sp)) {
-    //                    chem.ThirdBodies[i][komponents[name_sp]] = 1;
-    //                }
-    //            }
-    //        }
-    //        if (!M_exist) {
-    //            for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-    //                chem.ThirdBodies[i][k_spec] = 0;
-    //            }
-    //            for (const auto& specie : ThirdBodies) {
-    //                if (specie.first != "!M") {
-    //                    chem.ThirdBodies[i][komponents[specie.first]] = 1.;
-    //                }
-    //            }
-
-
-    //        }
-    //    }
-
-    //    if (chec.chemkinReader->reactions()[i].hasLOW())
-    //    {
-    //        auto& Arrhenius_LP = chec.chemkinReader->reactions()[i].getLOW();
-    //        chem.Arrh_LP_params[i][0] = Arrhenius_LP[0];
-    //        chem.Arrh_LP_params[i][1] = Arrhenius_LP[1];
-    //        chem.Arrh_LP_params[i][2] = Arrhenius_LP[2];
-    //    }
-    //}
-    //
-    //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-    //    chem.T_comon[k_spec] = chec.chemkinReader->species()[k_spec].thermo().getTCommon();
-    //}
-    }
-    //set_polynom(lambda_polynom, name_file, cond_str);
-
-    //set_polynom_diffusion(diff_polynom, name_file, diff_str);
-
 
     for (int i = 0; i < num_gas_species; i++) {
         auto koeff_vect = chec.chemkinReader->species()[i].thermo().getLowerTemperatureCoefficients();
@@ -285,9 +197,18 @@ void init_consts(int& num_gas_species, int& num_react) {
         poly_obj.getConductivityPolynomial(k, lambda_polynom[k]);
         for (int k2 = 0; k2 < num_gas_species; k2++) {
             poly_obj.getBinDiffusivityPolynomial(k, k2, diff_polynom[k][k2]);
+           // cout << name_species[k] << " " << name_species[k2] << " " << diff_polynom[k][k2][0] << " " << diff_polynom[k][k2][1] << " " << diff_polynom[k][k2][2] << " " << diff_polynom[k][k2][3] << "\n";
         }
     }
-
+    
+    
+   /* set_polynom(lambda_polynom, name_file, cond_str);
+    set_polynom_diffusion(diff_polynom, name_file, diff_str);*/
+    //for (int k = 0; k < num_gas_species; k++) {
+    //    for (int k2 = 0; k2 < num_gas_species; k2++) {
+    //        cout << name_species[k] << " " << name_species[k2] << " " << diff_polynom[k][k2][0] << " " << diff_polynom[k][k2][1] << " " << diff_polynom[k][k2][2] << " " << diff_polynom[k][k2][3] << "\n";
+    //    }
+    //}
 
     for (int component_i = 0; component_i < num_gas_species; component_i++)
     {
@@ -438,11 +359,17 @@ double get_Lambda(int i, double T)
 
 double get_Lambda5(int i, double T)
 {
+    //double lambda_arg;
+    //double logt = log(T);
+    //lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
+    //    + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
+    //return pow(T, 0.5) * lambda_arg * pow(10, 5);
     double lambda_arg;
     double logt = log(T);
     lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
-    return pow(T, 0.5) * lambda_arg * pow(10, 5);
+        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
+    //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
+    return exp(lambda_arg) *  pow(10, 5);
 }
 
 

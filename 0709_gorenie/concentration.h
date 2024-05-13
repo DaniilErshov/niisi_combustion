@@ -25,7 +25,7 @@ void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext)
 
 void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
 
-double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi);
+double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* Y_average);
 
 double Dij_func(int i, int j, double T);
 

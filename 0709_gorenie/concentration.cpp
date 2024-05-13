@@ -138,7 +138,10 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
                 //cout << "T1 = " << T1 << " " << chem.Troe_params[i][2] << "\n";
                 //cout << "T2 = " << T2 << " " << chem.Troe_params[i][3] << "\n";
 
-                Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1) + exp(-T2 / Tcurr);
+                if (T2 == 0)
+                    Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1);
+                else
+                    Fcent = (1 - alpha) * exp(-Tcurr / T3) + alpha * exp(-Tcurr / T1) + exp(-T2 / Tcurr);
                 c = -0.4 - 0.67 * log10(Fcent);
                 m = 0.75 - 1.27 * log10(Fcent);
                 d = 0.14;
@@ -175,13 +178,13 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
                     for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
                         Sn_tmp = phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
                         Sn[koeff_i] += Sn_tmp;
-                        Hn[koeff_i] += Sn_tmp / Tcurr ;
+                        Hn[koeff_i] += Sn_tmp / Tcurr;
                     }
                 else {
                     for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
                         Sn_tmp = phyc.Cp_coef_lT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
                         Sn[koeff_i] += Sn_tmp;
-                        Hn[koeff_i] += Sn_tmp / Tcurr ;
+                        Hn[koeff_i] += Sn_tmp / Tcurr;
                     }
                 }
                 sumv += koeff_komp;
@@ -194,7 +197,7 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
                     for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
                         Sn_tmp = phyc.Cp_coef_hT[komponent][koeff_i] * koeff_komp / phyc.kR * my_mol_weight(komponent);
                         Sn[koeff_i] -= Sn_tmp;
-                        Hn[koeff_i] -= Sn_tmp / Tcurr ;
+                        Hn[koeff_i] -= Sn_tmp / Tcurr;
                     }
                 else {
                     for (int koeff_i = 0; koeff_i < 9; koeff_i++) {
@@ -229,43 +232,38 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
         auto& ThirdBodies = chec.chemkinReader->reactions()[i].getThirdBodies();
 
         double forw_slag = 1, rev_slag = 1;
-        double mnozh_M = 0;
+        double mnozh_M = 1;
         for (const auto& iti : react) {
             int sp_i = komponents[iti.first];
-            for (int i = 0; i < iti.second; i++)
-                forw_slag *= y[sp_i];
+            forw_slag *= pow(y[sp_i], iti.second);
         }
 
         for (const auto& iti : prod) {
             int sp_i = komponents[iti.first];
-            for (int i = 0; i < iti.second; i++)
-                rev_slag *= y[sp_i];
+            rev_slag *= pow(y[sp_i], iti.second);
         }
         //cout << "forw true = " << forw_slag << "\n";
         //cout << "rev_slag true = " << rev_slag << "\n\n";
         equilib[i] = (forward[i] * forw_slag - reverse[i] * rev_slag);
-        //cout << "forward" << i << " = " << forward[i] << "\n";
-        //cout << "reverse" << i << " = " << reverse[i] << "\n";
-        //cout << " equilib" << i << " = " << equilib[i] << "\n\n\n";
         if (chec.chemkinReader->reactions()[i].hasThirdBody()) {
             //cout << "i = " << i << "\n";
+            mnozh_M = 0;
             for (const auto& specie : ThirdBodies) {
                 mnozh_M += (specie.second - 1) * y[komponents[specie.first]];
                 //cout << specie.first << " = " << specie.second << "\n";
             }
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-                    mnozh_M += y[k_spec];
-                    //cout << specie.name() << " = " << 1 << "\n";
+                mnozh_M += y[k_spec];
+                //cout << specie.name() << " = " << 1 << "\n";
             }
+
             equilib[i] *= mnozh_M;
         }
+        //cout << "forward " << i << " = " << forward[i] * forw_slag * mnozh_M << "\n";
+        //cout << "reverse " << i << " = " << reverse[i] * rev_slag * mnozh_M << "\n";
+        //cout << " equilib " << i << " = " << equilib[i] << "\n\n\n";
     }
 
-    //for (int r_i = 0; r_i < num_react; r_i++)
-    //{
-    //    cout << "forward " << r_i << " = " << forward[r_i] << "\n";
-    //    cout << "reverse " << r_i << " = " << reverse[r_i] << "\n";
-    //}
     //find totall yprime
     for (int sp_i = 0; sp_i < num_gas_species; sp_i++) {
         yprime[sp_i] = 0;
@@ -284,16 +282,15 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
     }
 }
 
-double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
+double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* Y_average) {
     double sum = 0.;
-    double W = get_W(Y);
-    double rho = get_rho(Y, T);
+    double W = get_W(Y_average);
+    double rho = get_rho(Y_average, T);
     double YkVk = 0;
     double Dkm = 0;
-    int T_int = (int)round(T);;
     double Dij = 0;
     double specie1, specie2;
-  
+
 
     for (int j = 0; j < num_gas_species; j++) {
         if (j != k) {
@@ -302,7 +299,7 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi) {
         }
     }
 
-    Dkm = (1. - Y[k]) / sum;
+    Dkm = (1. - Y_average[k]) / sum;
     //cout << "Dkm for " << name_species[k] << " = " << Dkm << "\n";
     return  -my_mol_weight(k) / W * Dkm * gradX[k];
 }
@@ -318,11 +315,16 @@ double Dij_func(int i, int j, double T)
 
 double Dij_func5(int i, int j, double T)
 {
+    //double res;
+    //double logt = log(T);
+    //res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt
+    //    + diff_polynom[i][j][4] * logt * logt * logt * logt;
+    ////cout << "res = " << res << "\n";
+    //return  res * pow(T, 1.5) / pow(10, 1);
+
     double res;
     double logt = log(T);
-    res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt
-        + diff_polynom[i][j][4] * logt * logt * logt * logt;
+    res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt;
     //cout << "res = " << res << "\n";
-    return  res * pow(T, 1.5) / P / pow(10, 2);
+    return  exp(res) / 10.;
 }
-

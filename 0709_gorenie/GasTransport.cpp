@@ -246,7 +246,10 @@ void GasTransport::fitCollisionIntegrals(MMCollisionInt& integrals)
 void GasTransport::fitProperties(MMCollisionInt& integrals)
 {
     // number of points to use in generating fit data
-    const size_t np = 50;
+    const size_t np = 400;
+    //ATTENTION
+    m_mode = CK_Mode;
+    //ATTENTION
     int degree = (m_mode == CK_Mode ? 3 : 4);
     double dt = (maxTemp - minTemp) / (np - 1);
     vector<double> tlog(np), spvisc(np), spcond(np);
@@ -382,7 +385,7 @@ void GasTransport::fitProperties(MMCollisionInt& integrals)
 void GasTransport::fitDiffCoeffs(MMCollisionInt& integrals)
 {
     // number of points to use in generating fit data
-    const size_t np = 50;
+    const size_t np = 400;
     int degree = (m_mode == CK_Mode ? 3 : 4);
     double dt = (maxTemp - minTemp) / (np - 1);
     vector<double> tlog(np);
@@ -411,7 +414,6 @@ void GasTransport::fitDiffCoeffs(MMCollisionInt& integrals)
                 double om11 = integrals.omega11(tstar, m_delta[j][k]);
                 double diffcoeff = 3.0 / 16.0 * sqrt(2.0 * Pi / m_reducedMass[k][j])
                     * pow(Boltzmann * t, 1.5) / (Pi * sigma * sigma * om11);
-
                 // 2nd order correction
                 // NOTE: THIS CORRECTION IS NOT APPLIED
                 //double fkj, fjk;

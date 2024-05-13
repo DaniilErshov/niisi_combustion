@@ -51,7 +51,7 @@ double polyfit(size_t n, size_t deg, const double* xp, const double* yp,
 
     for (int i = 0; i < n; i++) {
         if (wp[0] != -1)
-            del = wp[i];
+            del = wp[i] * wp[i];
         else
             del = 1;
         yp_copy[i] = yp[i] * del;
@@ -62,7 +62,7 @@ double polyfit(size_t n, size_t deg, const double* xp, const double* yp,
         X[i] = 0;
         for (int j = 0; j < n; j++) {
             if (wp[0] != -1)
-                del = wp[j];
+                del = wp[j] * wp[j];
             else
                 del = 1;
             X[i] = X[i] + pow(xp[j], i) * del;

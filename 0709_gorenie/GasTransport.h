@@ -384,7 +384,7 @@ protected:
 
     //! Type of the polynomial fits to temperature. `CK_Mode` means Chemkin mode.
     //! Any other value means to use %Cantera's preferred fitting functions.
-    int m_mode = 0;
+    int m_mode = CK_Mode;
 
     //! m_phi is a Viscosity Weighting Function. size = m_nsp * n_nsp
     vector<vector<double>> m_phi;
