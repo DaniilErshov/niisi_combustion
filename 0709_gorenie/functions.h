@@ -65,6 +65,7 @@ extern double R;
 extern double x_center;
 extern double koeff_l;
 extern double l;
+extern double* norm;
 extern long int myiter;
 extern long int nniters;
 extern double eps_x ;
@@ -265,3 +266,5 @@ double F_right_IDA(UserData data,
 int Find_final_state_KINSOL(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
 
 static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data);
+
+void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart);

@@ -31,4 +31,6 @@ double Dij_func(int i, int j, double T);
 
 double Dij_func5(int i, int j, double T);
 
+void moleFraction_to_massFraction(double* X, double* Y);
+
 void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);

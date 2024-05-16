@@ -201,7 +201,6 @@ void init_consts(int& num_gas_species, int& num_react) {
         }
     }
     
-    
    /* set_polynom(lambda_polynom, name_file, cond_str);
     set_polynom_diffusion(diff_polynom, name_file, diff_str);*/
     //for (int k = 0; k < num_gas_species; k++) {

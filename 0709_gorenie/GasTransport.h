@@ -8,7 +8,7 @@
 
 const int CK_Mode = 10;
 
-#include "Transport.h"
+//#include "Transport.h"
 #include "constants.h"
 #include "iostream"
 
@@ -218,7 +218,7 @@ public:
         double* bstar_coeffs,
         double* cstar_coeffs, bool actualT) ;
 
-    void init(int mode = 0, int m_nsp = num_gas_species) ;
+    void init(int mode = CK_Mode, int m_nsp = num_gas_species) ;
 
     bool CKMode() const  {
         return m_mode == CK_Mode;

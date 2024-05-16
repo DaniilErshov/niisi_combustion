@@ -656,7 +656,7 @@ int integrate_Y_IDA(int N_x, vector<double>& x_vect,
     /* Print final statistics to the screen */
     cout << "\nFinal Statistics:\n";
     retval = IDAPrintAllStats(mem, stdout, SUN_OUTPUTFORMAT_TABLE);
-
+    KINGetFuncNorm(mem, norm);
     IDAFree(&mem);
     SUNNonlinSolFree(NLS);
     SUNLinSolFree(LS);
@@ -1264,6 +1264,7 @@ int Integrate_Kinsol(int N_x, vector<double>& x_vect,
 
     printf("\nFinal statsistics:\n");
     retval = KINPrintAllStats(kmem, stdout, SUN_OUTPUTFORMAT_TABLE);
+    KINGetFuncNorm(kmem, norm);
     N_VDestroy(res_vect);
     N_VDestroy(s);
     N_VDestroy(c);
@@ -1371,10 +1372,10 @@ static int func_kinsol(N_Vector u, N_Vector f, void* user_data)
                 x_vect[i - 1], x_vect[i], x_vect[i + 1]);
         }
         if (i > Ncentr) {
-            rval[i_temp] = yval[i_temp] - yval[i_temp - (num_gas_species + 2)];
+            rval[i_temp] = (yval[i_temp] - yval[i_temp - (num_gas_species + 2)]) / (x_vect[i] - x_vect[i - 1]);
         }
         if (i < Ncentr) {
-            rval[i_temp] = yval[i_temp] - yval[i_temp + (num_gas_species + 2)];
+            rval[i_temp] = (yval[i_temp] - yval[i_temp + (num_gas_species + 2)]) / (x_vect[i] - x_vect[i + 1]);
         }
         i_temp++;
     }
@@ -1756,7 +1757,7 @@ static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data)
 }
 
 
-void makeYstart(double koeff_topl, double* Ystart) {
+void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart) {
 
     /* Ystart[0] = koeff_topl * 2.0 / (koeff_topl * 2. + 1. + 3.76);
      Ystart[2] = 1.0 / (koeff_topl * 2. + 1. + 3.76);
@@ -1771,10 +1772,31 @@ void makeYstart(double koeff_topl, double* Ystart) {
          Ystart[k_spec] *= phyc.mol_weight[k_spec] / Wsmes;
          cout << "Yi = " << Ystart[k_spec] << "\n";
      }*/
-    Ystart[komponents["H2"]] = 1.988419E-9;
-    Ystart[komponents["O2"]] = 0.2184336;
-    Ystart[komponents["N2"]] = 0.7193815;
-    Ystart[komponents["NC7H16"]] = 0.06218489;
+    double n = 7;
+    double m = 16;
+    double koeff_O2 = (n + 0.25 * m);
+
+    double koeff_N2 = N2_in / O2_in * koeff_O2;
+    double koeff_fuel = koeff_topl;
+    cout << "koeff_fuel = " << koeff_fuel << "\n";
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        Xi[k_spec] = 0;
+    }
+
+    Xi[komponents["O2"]] = koeff_O2 / (koeff_O2 + koeff_N2 + koeff_fuel);
+    Xi[komponents["N2"]] = koeff_N2 / (koeff_O2 + koeff_N2 + koeff_fuel);
+    Xi[komponents[fuel]] = koeff_fuel / (koeff_O2 + koeff_N2 + koeff_fuel);
+
+    cout << "mol O2 = " << Xi[komponents["O2"]] << "\n";
+    cout << "mol N2 = " << Xi[komponents["N2"]] << "\n";
+    cout << "mol " << fuel << " = " << Xi[komponents[fuel]] << "\n";
+
+    moleFraction_to_massFraction(Xi, Ystart);
+
+
+    cout << "O2 = " << Ystart[komponents["O2"]] << "\n";
+    cout << "N2 = " << Ystart[komponents["N2"]] << "\n";
+    cout << fuel << " = " << Ystart[komponents[fuel]] << "\n";
 }
 
 void set_polynom(double** ploynom, std::string name_file, std::string type_polynom) {

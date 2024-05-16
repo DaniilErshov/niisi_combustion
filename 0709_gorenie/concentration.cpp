@@ -18,6 +18,18 @@ void Get_mole_fr(double* X, double* Y)
     }
 }
 
+void moleFraction_to_massFraction(double* X, double* Y)
+{
+    double W = 0;
+    for (int i = 0; i < num_gas_species; i++) {
+        W += my_mol_weight(i) * X[i];
+    }
+    cout << "W = " << W << "\n";
+    for (int i = 0; i < num_gas_species; i++) {
+        Y[i] = X[i] * (my_mol_weight(i)) / W;
+    }
+}
+
 void Get_molar_cons(double* X, double* Y, double T)
 {
     double W = 0;
@@ -326,5 +338,5 @@ double Dij_func5(int i, int j, double T)
     double logt = log(T);
     res = diff_polynom[i][j][0] + diff_polynom[i][j][1] * logt + diff_polynom[i][j][2] * logt * logt + diff_polynom[i][j][3] * logt * logt * logt;
     //cout << "res = " << res << "\n";
-    return  exp(res) / 10.;
+    return  exp(res) / P / 100.;
 }

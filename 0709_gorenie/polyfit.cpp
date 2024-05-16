@@ -109,7 +109,7 @@ double polyfit(size_t n, size_t deg, const double* xp, const double* yp,
         }
         res += pow(yj - yp[j], 2);
     }
-    delete[]  X;
+    delete[] X;
     delete[] yp_copy;
     delete[] xp_copy;
     delete[] A1;
