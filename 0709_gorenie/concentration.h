@@ -4,6 +4,7 @@
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
 extern chem_struct chem;
+extern bool save_chem_koeffs;
 
 double my_mol_weight(int k);
 
@@ -23,14 +24,10 @@ double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti
 
 void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext);
 
-void add_toChemVel(double* wk_add, double M, double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext);
-
 double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* Y_average);
 
-double Dij_func(int i, int j, double T);
-
-double Dij_func5(int i, int j, double T);
+double Dij_func5(int i, int j, double T, int number_cell);
 
 void moleFraction_to_massFraction(double* X, double* Y);
 
-void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime);
+void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime, int num_cell);

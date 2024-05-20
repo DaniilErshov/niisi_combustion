@@ -3,19 +3,19 @@
 #include "chemkinReader.h"
 #include "GasTransport.h"
 void init_consts(int& num_gas_species, int& num_react);
-double get_Hi(int component_i, double T);
-double get_Cpi(int component_i, double T);
-double get_Cvi(int component_i, double T);
-double get_enthalpy(int num_species, double *Y, double T);
+double get_Hi(int component_i, double T, int number_cell);
+double get_Cpi(int component_i, double T, int number_cell);
+double get_Cvi(int component_i, double T, int number_cell);
+double get_Cp(int num_species, double* Y, double T, int number_cell);
+double get_enthalpy(int num_species, double *Y, double T, int number_cell);
 double get_gas_constant(int num_gas_species, double *Y);
-double get_Cp(int num_species, double *Y, double T);
-double get_Cv(int num_species, double *Y, double T);
+double get_Cv(int num_species, double* Y, double T, int number_cell);
 double get_Si(int component_i, double T);
 double get_dHiRT(double* Cp_coef, double T);
 double get_dSiR(double* Cp_coef, double T);
 double get_dCpi(double* Cp_coef, double T);
-double get_Lambda(int i, double T);
-double get_Lambda5(int i, double T);
+double get_Lambda(int i, double T, int number_cell, char side);
+double get_Lambda5(int i, double T, int number_cell, char side);
 void allocate_memory();
 void free_memory();
 

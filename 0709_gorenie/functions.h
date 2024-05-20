@@ -122,10 +122,15 @@ extern double** lambda_polynom;
 extern double* mol_weight;
 extern int jactimes;
 extern vector<vector<double>> Cp_arr;
+extern vector<vector<double>> H_arr;
+extern vector<vector<double>> Lambda_arr;
 extern vector<vector<double>> Lambda_arr_r;
 extern vector<vector<double>> Lambda_arr_l;
+extern vector<vector<vector<double>>> Dij_arr;
 extern vector<vector<vector<double>>> Dij_arr_r;
 extern vector<vector<vector<double>>> Dij_arr_l;
+extern vector<vector<double>> forward_arr_save;
+extern vector<vector<double>> reverse_arr_save;
 
 extern int ida_steps;
 extern double eps;
@@ -138,6 +143,9 @@ extern std::map<int, string> mykomponents_str;
 extern vector<double> x_vect;
 extern vector<double> Y_vect;
 extern vector<double> T_vect;
+extern bool flag_use_save_koeffs;
+extern bool save_chem_koeffs;
+extern bool update_koeffs;
 
 typedef struct {
     double Vc_r, Vc_l, rho_r, rho_l;
@@ -146,6 +154,8 @@ typedef struct {
     int NEQ;
     int NEQ_Y;
     int N_centr;
+    int my_numjac;
+    double my_tcur;
     void* sun_mem;
     realtype Tl;
     realtype M;
@@ -153,14 +163,17 @@ typedef struct {
     IO::ChemkinReader* chemkinReader;
 } *UserData;
 
+void resize_koeff_vectors(int N_x);
+
+void updateKoeffs(double* yval, UserData data);
 
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
 double F_right(UserData data,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int number_cell);
 
 double F_rightY(UserData data, int k_spec,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int number_cell);
 
 
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
@@ -207,7 +220,7 @@ static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr
 void makeYstart(double koeff_topl, double* Ystart);
 
 void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, double* Yinext,
-    double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i);
+    double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i, char side);
 
 std::vector<std::string> splitString(std::string str, char splitter);
 
@@ -222,7 +235,7 @@ void MakeYvectorsY(UserData data,
     double* Y, int myNx, int i, double Tl);
 
 double get_M(double Tprev, double T, double Tnext,
-    double xprev, double x, double xnext);
+    double xprev, double x, double xnext, int number_cell);
 
 
 int Integrate_Kinsol_dense(int N_x, vector<double>& x_vect,
@@ -244,7 +257,7 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-void set_Dij_res(double T);
+void set_Dij_res(double T, int number_cell, char side);
 
 
 int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
