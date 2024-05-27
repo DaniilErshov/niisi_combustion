@@ -79,6 +79,7 @@ int ida_steps;
 vector<double> x_vect;
 vector<double> Y_vect;
 vector<double> T_vect;
+vector<double> u_vect;
 
 vector<vector<double>> Cp_arr;
 vector<vector<double>> H_arr;
@@ -127,123 +128,35 @@ int main()
     string title2 = R"(VARIABLES= "koeff_fuel", "v", "Tend", "norm")";
     fout_v << "TITLE=\"" << "Graphics" << "\"" << endl;
     fout_v << title2 << endl;
+    double koeff_topl = 1;
+    double tout1 = pow(10, -7);
+    double Tend = 2385.4;
+    double T_start = Tstart;
+    double T_finish = Tfinish;
+    double T_center;
+    int N_x = 500;
 
-    for (double koeff_topl = 0.7; koeff_topl <= 0.7; koeff_topl += 0.1)
-    {
-        double tout1 = pow(10, -7);
-        double Tend = 2385.4;
-        double T_start = Tstart;
-        double T_finish = Tfinish;
-        double T_center;
-        int N_x = 10;
+    x_vect.resize(N_x);
+    Y_vect.resize(N_x * num_gas_species);
+    T_vect.resize(N_x);
+    resize_koeff_vectors(N_x);
 
-        x_vect.resize(N_x);
-        Y_vect.resize(N_x * num_gas_species);
-        T_vect.resize(N_x);
-        resize_koeff_vectors(N_x);
+    makeYstart(koeff_topl, "NC7H16", 0.21, 0.79, Ystart);
+    Find_final_state_IDA(T_start, Tend, Ystart, Yend);
+    Find_final_state_KINSOL(T_start, Tend, Ystart, Yend);
+    M = 60 * get_rho(Ystart, Tstart);
+    int j_t = 1;
+    N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
+    Tfinish = Tend;
 
-        makeYstart(koeff_topl, "NC7H16", 0.21, 0.79, Ystart);
-        Find_final_state_IDA(T_start, Tend, Ystart, Yend);
-        Find_final_state_KINSOL(T_start, Tend, Ystart, Yend);
-        M = 60 * get_rho(Ystart, Tstart);
-        int j_t = 1;
-        N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
-        Tfinish = Tend;
-        //Write_to_file("detail/initial", fout, x_vect,
-        //    T_vect, Y_vect, Y_vect, M, N_x, 1);
+    double t_Y = pow(10, -7), t_full = pow(10, -6);
+    T_center = T_vect[N_center];
+    ida_steps = 2000;
+    integrate_All_IDA_M(N_x, x_vect,
+        T_vect, Y_vect, u_vect, M, N_center, Ystart, 1, t_full);
+    Write_to_file("detail/Ida_1", fout, x_vect,
+        T_vect, Y_vect, Y_vect, M, N_x, 1);
 
-        double t_Y = pow(10, -7), t_full = pow(10, -6);
-        T_center = T_vect[N_center];
-        ida_steps = 5;
-        eps = 0;
-        integrate_All_IDA(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-        //Write_to_file("detail/Ida_1", fout, x_vect,
-        //    T_vect, Y_vect, Y_vect, M, N_x, 1);
-
-        ida_steps = 80;
-        integrate_All_IDA_M(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-        //Write_to_file("detail/Ida_1", fout, x_vect,
-        //    T_vect, Y_vect, Y_vect, M, N_x, 1);
-
-        eps = pow(10, -3);
-        Integrate_Kinsol(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 6);
-
-        //Write_to_file("detail/KINSOL1", fout, x_vect,
-        //    T_vect, Y_vect, Y_vect, M, N_x, 1);
-        cout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
-        Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.01, 2, 1, T_center);
-        ida_steps = 50;
-        eps = pow(10, -3);
-        integrate_All_IDA_M(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-        //Integrate_Kinsol(N_x, x_vect,
-        //    T_vect, Y_vect, M, N_center, Ystart, 6);
-        //cout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
-        int number_epoch = 0;
-        int add_cell = 1;
-        int add_cell_start = 2;
-        ftol = pow(10, -6);
-        stoler = pow(10, -20);
-
-        //ida_steps = 60;
-        //eps = pow(10, -3);
-        //integrate_All_IDA_M(N_x, x_vect,
-        //    T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-        while  (N_x < 400)
-        {
-            cout << to_string(koeff_topl) << " N_x = " << N_x << "\n";
-            if (number_epoch > 8) add_cell = 0;
-            if (number_epoch > 6) add_cell_start = 0;
-            Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, add_cell, add_cell_start, T_center);
-            //ida_steps = 10;
-            //eps = pow(10, -3);
-            if (N_x > 30) {
-                flag_use_save_koeffs = 1;
-                save_chem_koeffs = 1;
-            }
-            else {
-                flag_use_save_koeffs = 0;
-            }
-            //integrate_All_IDA_M(N_x, x_vect,
-            //    T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-            Integrate_Kinsol(N_x, x_vect,
-                T_vect, Y_vect, M, N_center, Ystart, 6);
-            cout << to_string(koeff_topl) << " v = " << M / get_rho(Ystart, Tstart) << "\n";
-            cout << to_string(koeff_topl) << " Tend = " << T_vect[T_vect.size() - 1] << "\n";
-            cout << " norm = " << norm[0] << "\n";
-            cout << " x_right = " << x_vect[x_vect.size() - 1] << "\n";
-             Write_to_file("detail/KINSOL_" + to_string(koeff_topl) + "_" + to_string(x_vect.size()), fout, x_vect,
-                 T_vect, Y_vect, Y_vect, M, N_x, 1);
-
-             //fout.open("detail/M_.dat");
-             //fout << "M = " << M << "\n";
-             //fout << "rho = " << get_rho(Ystart, Tstart) << "\n";
-             //fout << "v = " << M / get_rho(Ystart, Tstart) << "\n";
-             //fout << "T = " << T_vect[T_vect.size() - 1] << "\n";
-             //fout.close();
-            number_epoch++;
-            add_cell = 2;
-        }
-
-        flag_use_save_koeffs = 0;
-        save_chem_koeffs = 0;
-        Integrate_Kinsol(N_x, x_vect,
-            T_vect, Y_vect, M, N_center, Ystart, 6);
-        cout << to_string(koeff_topl) << " v = " << M / get_rho(Ystart, Tstart) << "\n";
-        cout << to_string(koeff_topl) << " Tend = " << T_vect[T_vect.size() - 1] << "\n";
-        cout << " norm = " << norm[0] << "\n";
-        cout << " x_right = " << x_vect[x_vect.size() - 1] << "\n";
-        Write_to_file("detail/KINSOL_" + to_string(koeff_topl), fout, x_vect,
-            T_vect, Y_vect, Y_vect, M, N_x, 1);
-
-        fout_v << koeff_topl << " " << M / get_rho(Ystart, Tstart) << " " << T_vect[T_vect.size() - 1] << " "
-            << norm[0] << "\n";
-        cout << "fout_v did\n";
-    }
-    fout_v.close();
 
     free_memory();
     return 0;

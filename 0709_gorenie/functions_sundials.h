@@ -153,6 +153,12 @@ typedef struct {
     IO::ChemkinReader* chemkinReader;
 } *UserData;
 
+
+double F_right_rho(UserData data,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext,
+    double uprev, double u, double unext,
+    int number_cell);
+
 void resize_koeff_vectors(int N_x);
 
 void updateKoeffs(double* yval, UserData data);
@@ -160,10 +166,12 @@ void updateKoeffs(double* yval, UserData data);
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
 double F_right(UserData data,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int number_cell);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, 
+    double uprev, double u, double unext, int number_cell);
 
 double F_rightY(UserData data, int k_spec,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int number_cell);
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext, 
+    double uprev, double u, double unext, int number_cell);
 
 
 int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
@@ -233,7 +241,7 @@ void MakeYvectors_kins(UserData data,
 
 
 int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
+    vector<double>& T_vect, vector<double>& Y_vect, vector<double>& u_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
 
 
 static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
