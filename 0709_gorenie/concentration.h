@@ -1,9 +1,8 @@
 #pragma once
-#include "functions.h"
+#include "functions_sundials.h"
 #include "chemkinReader.h"
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
-extern chem_struct chem;
 extern bool save_chem_koeffs;
 
 double my_mol_weight(int k);

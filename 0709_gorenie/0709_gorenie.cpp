@@ -1,4 +1,4 @@
-﻿#include "functions.h"
+﻿#include "functions_sundials.h"
 
 double k_mol = pow(10, 3);
 double Y_N2 = 0.745187;
@@ -90,8 +90,6 @@ vector<vector<vector<double>>> Dij_arr_r;
 vector<vector<vector<double>>> Dij_arr_l;
 vector<vector<double>> forward_arr_save;
 vector<vector<double>> reverse_arr_save;
-
-struct chem_struct chem;
 vector<string> name_species;
 
 std::unordered_map<std::string, int> komponents{
@@ -199,7 +197,7 @@ int main()
             cout << to_string(koeff_topl) << " N_x = " << N_x << "\n";
             if (number_epoch > 8) add_cell = 0;
             if (number_epoch > 6) add_cell_start = 0;
-            Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.03, add_cell, add_cell_start, T_center);
+            Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, add_cell, add_cell_start, T_center);
             //ida_steps = 10;
             //eps = pow(10, -3);
             if (N_x > 30) {

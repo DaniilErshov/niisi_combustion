@@ -1,4 +1,4 @@
-﻿#include "functions.h"
+﻿#include "functions_sundials.h"
 
 int flag = 0;
 #define RTOL  RCONST(1.0e-5)
@@ -441,6 +441,7 @@ void Init_Data(UserData data, int N_x, vector<double>& x_vect,
         Y_left_bound[i] = Y_leftb[i];
     }
 }
+
 int integrate_All_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix) {
 
@@ -1332,7 +1333,6 @@ static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr
     return(0);
 }
 
-
 int Find_final_state_KINSOL(double& Tinitial, double& Tend, double* Y_vect, double* Y_end)
 {
     SUNContext sunctx;
@@ -1480,7 +1480,6 @@ static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data)
     return(0);
 }
 
-
 void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart) {
 
     /* Ystart[0] = koeff_topl * 2.0 / (koeff_topl * 2. + 1. + 3.76);
@@ -1522,144 +1521,6 @@ void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, doub
     cout << "N2 = " << Ystart[komponents["N2"]] << "\n";
     cout << fuel << " = " << Ystart[komponents[fuel]] << "\n";
 }
-
-void set_polynom(double** ploynom, std::string name_file, std::string type_polynom) {
-    std::string line;
-    std::string koeff_str = "COEFFICIENTS";
-    std::ifstream in(name_file); // îêðûâàåì ôàéë äëÿ ÷òåíèÿ
-    if (in.is_open())
-    {
-        while (getline(in, line))
-        {
-            vector splitted_string = splitString(line, ' ');
-            if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end()
-                && std::find(splitted_string.begin(), splitted_string.end(), type_polynom) != splitted_string.end())
-            {
-                getline(in, line);
-                while (getline(in, line))
-                {
-                    vector splitted_string = splitString(line, ' ');
-                    if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end())
-                        return;
-
-
-                    if (splitted_string.size() != 0)
-                    {
-
-                        string specie = splitted_string[0];
-                        std::transform(specie.begin(), specie.end(), specie.begin(), ::toupper);
-                        if (komponents.contains(specie))
-                        {
-                            int i_komp = komponents[specie];
-                            cout << "line = " << line << "\n";
-                            cout << "i_komp = " << i_komp << "\n";
-
-                            ploynom[i_komp][0] = stod(splitted_string[1]);
-                            ploynom[i_komp][1] = stod(splitted_string[2]);
-                            ploynom[i_komp][2] = stod(splitted_string[3]);
-                            ploynom[i_komp][3] = stod(splitted_string[4]);
-                            cout << specie << " " << i_komp << " " << ploynom[i_komp][0]
-                                << " " << ploynom[i_komp][1]
-                                << " " << ploynom[i_komp][2]
-                                << " " << ploynom[i_komp][3] << "\n";
-                        }
-
-                    }
-
-                }
-            }
-
-
-        }
-    }
-    in.close();
-}
-
-void set_polynom_diffusion(double*** polynom, std::string name_file, std::string type_polynom) {
-    std::string line;
-    std::string koeff_str = "COEFFICIENTS";
-    std::ifstream in(name_file); // îêðûâàåì ôàéë äëÿ ÷òåíèÿ
-    if (in.is_open())
-    {
-        while (getline(in, line))
-        {
-            vector splitted_string = splitString(line, ' ');
-            if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end()
-                && std::find(splitted_string.begin(), splitted_string.end(), type_polynom) != splitted_string.end())
-            {
-                getline(in, line);
-                while (getline(in, line))
-                {
-                    vector splitted_string = splitString(line, ' ');
-                    if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end())
-                        return;
-
-                    if (splitted_string.size() != 0)
-                    {
-                        string specie1 = splitted_string[0];
-                        std::transform(specie1.begin(), specie1.end(), specie1.begin(), ::toupper);
-
-                        string specie2 = splitted_string[1];
-                        std::transform(specie2.begin(), specie2.end(), specie2.begin(), ::toupper);
-
-                        if (komponents.contains(specie1) && komponents.contains(specie2))
-                        {
-                            int i_sp1 = komponents[specie1];
-                            int i_sp2 = komponents[specie2];
-                            polynom[i_sp1][i_sp2][0] = stod(splitted_string[2]);
-                            polynom[i_sp1][i_sp2][1] = stod(splitted_string[3]);
-                            polynom[i_sp1][i_sp2][2] = stod(splitted_string[4]);
-                            polynom[i_sp1][i_sp2][3] = stod(splitted_string[5]);
-
-                            polynom[i_sp2][i_sp1][0] = stod(splitted_string[2]);
-                            polynom[i_sp2][i_sp1][1] = stod(splitted_string[3]);
-                            polynom[i_sp2][i_sp1][2] = stod(splitted_string[4]);
-                            polynom[i_sp2][i_sp1][3] = stod(splitted_string[5]);
-
-                            /*cout << komponents[specie1] << " " << komponents[specie2]
-                                << " " << polynom[i_sp1][i_sp2][0]
-                                << " " << polynom[i_sp1][i_sp2][1]
-                                << " " << polynom[i_sp1][i_sp2][2]
-                                << " " << polynom[i_sp1][i_sp2][3] << "\n";*/
-                        }
-
-                    }
-
-                }
-            }
-        }
-    }
-    in.close();
-}
-std::vector<std::string> splitString(std::string str, char splitter) {
-    std::vector<std::string> result;
-    std::string current = "";
-    for (int i = 0; i < str.size(); i++) {
-        if (str[i] == splitter) {
-            if (current != "") {
-                result.push_back(current);
-                current = "";
-            }
-            continue;
-        }
-        current += str[i];
-    }
-    if (current.size() != 0)
-        result.push_back(current);
-    return result;
-}
-
-template <typename T>
-void findValue(const std::vector<T>& data, bool(*condition)(T))
-{
-    auto result{ std::find_if(begin(data), end(data), condition) };
-    if (result == end(data))
-        std::cout << "Value not found" << std::endl;
-    else
-        std::cout << "Value found at position " << (result - begin(data)) << std::endl;
-}
-
-
 
 int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix) {
@@ -1945,7 +1806,6 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     SUNContext_Free(&ctx);
     return(retval);
 }
-
 
 static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data)
 {

@@ -146,14 +146,14 @@
     <ClCompile Include="MMCollisionInt.cpp" />
     <ClCompile Include="concentration.cpp" />
     <ClCompile Include="constants.cpp" />
-    <ClCompile Include="functions.cpp" />
+    <ClCompile Include="functions_sundials.cpp" />
     <ClCompile Include="polyfit.cpp" />
     <ClCompile Include="thermodynamic.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="concentration.h" />
     <ClInclude Include="constants.h" />
-    <ClInclude Include="functions.h" />
+    <ClInclude Include="functions_sundials.h" />
     <ClInclude Include="GasTransport.h" />
     <ClInclude Include="MMCollisionInt.h" />
     <ClInclude Include="polyfit.h" />

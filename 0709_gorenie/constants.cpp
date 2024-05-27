@@ -1,6 +1,6 @@
-#include <cmath>
+﻿#include <cmath>
 #include <iostream>
-#include "functions.h"
+#include "functions_sundials.h"
 
 using namespace std;
 
@@ -89,19 +89,6 @@ void init_consts(int& num_gas_species, int& num_react) {
     //chec.chemkinReader->check();
     //cout << "37\n";
     //cout << chec.chemkinReader->reactions()[37] << "\n";
-
-    cout << "16\n";
-    cout << chec.chemkinReader->reactions()[16] << "\n";
-
-    cout << "17\n";
-    cout << chec.chemkinReader->reactions()[17] << "\n";
-
-    cout << "193\n";
-    cout << chec.chemkinReader->reactions()[193] << "\n";
-
-
-
-    std::cout << "NEW BLOCK" << std::endl;
     num_react = chec.chemkinReader->reactions().size();
     num_gas_species = chec.chemkinReader->species().size();
     chec.sum_v = new double[num_react];
@@ -135,22 +122,7 @@ void init_consts(int& num_gas_species, int& num_react) {
         name_species.push_back(specie_i.name());
         i_specie++;
     }
-
-    
     allocate_memory();
-
-    double d = 0.14;
-    int k = 0, l = 0;
-    double logF_f, logF_core_f, logF_r, logF_core_r;
-
-    double sum1, sum2;
-    double Kci;
-    double Kpi;
-    double dSiR, dHiRT;
-    double sumv = 0;
-    double k_0_f, k_inf_f, c, m, Pr_f, Fcent, F_f;
-    double sum_ThirdBodies;
-    bool M_exist = 1;
     auto& species = chec.chemkinReader->species();
 
 
@@ -160,18 +132,15 @@ void init_consts(int& num_gas_species, int& num_react) {
         for (int j = 0; j < 9; j++) {
             phyc.Cp_coef_lT[i][j] = 0;
             phyc.Cp_coef_hT[i][j] = 0;
-            //cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
         }
 
         for (int j = 0; j < koeff_vect.size(); j++) {
             phyc.Cp_coef_lT[i][j] = koeff_vect[j];
-            //cout << "lt = " << phyc.Cp_coef_lT[i][j] << "\n";
         }
 
         koeff_vect = chec.chemkinReader->species()[i].thermo().getUpperTemperatureCoefficients();
         for (int j = 0; j < koeff_vect.size(); j++) {
             phyc.Cp_coef_hT[i][j] = koeff_vect[j];
-            //cout << "ht = " << phyc.Cp_coef_hT[i][j] << "\n";
         }
     }
 
@@ -220,213 +189,146 @@ void init_consts(int& num_gas_species, int& num_react) {
         }
     }
 }
-   
-double get_dHiRT(double* Cp_coef, double T)
-{
-    double Hi;
-    Hi = Cp_coef[0] + Cp_coef[1] / 2.* T + Cp_coef[2] / 3. * T * T
-        + Cp_coef[3] / 4. * T * T * T + Cp_coef[4] / 5. * T * T * T* T + Cp_coef[5] / T;
-    return Hi * T;
-}
+void set_polynom(double** ploynom, std::string name_file, std::string type_polynom) {
+    std::string line;
+    std::string koeff_str = "COEFFICIENTS";
+    std::ifstream in(name_file); // îêðûâàåì ôàéë äëÿ ÷òåíèÿ
+    if (in.is_open())
+    {
+        while (getline(in, line))
+        {
+            vector splitted_string = splitString(line, ' ');
+            if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end()
+                && std::find(splitted_string.begin(), splitted_string.end(), type_polynom) != splitted_string.end())
+            {
+                getline(in, line);
+                while (getline(in, line))
+                {
+                    vector splitted_string = splitString(line, ' ');
+                    if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end())
+                        return;
 
-double get_dSiR(double* Cp_coef, double T) {
-    double Si;
-    Si = Cp_coef[0] * log(T) + Cp_coef[1] * T + Cp_coef[2] / 2. * T * T
-        + Cp_coef[3] / 3. * T * T * T + Cp_coef[4] / 4. * T * T * T * T + Cp_coef[6];
-    return Si;
-}
-double get_dCpi(double* Cp_coef, double T)
-{
-    double Cpi;
-    Cpi = Cp_coef[0] + Cp_coef[1] * T + Cp_coef[2] * T * T
-        + Cp_coef[3] * T * T * T + Cp_coef[4] * T * T * T * T;
 
-    return Cpi;
-}
+                    if (splitted_string.size() != 0)
+                    {
 
-double get_Hi(int component_i, double T, int number_cell)
-{
-    double Hi;
-    int i = component_i;
-    if (!flag_use_save_koeffs) {
-        if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
-            Hi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] / 2. * T + phyc.Cp_coef_hT[i][2] / 3. * T * T
-            + phyc.Cp_coef_hT[i][3] / 4. * T * T * T + phyc.Cp_coef_hT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_hT[i][5] / T;
-        else
-            Hi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] / 2. * T + phyc.Cp_coef_lT[i][2] / 3. * T * T
-            + phyc.Cp_coef_lT[i][3] / 4. * T * T * T + phyc.Cp_coef_lT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_lT[i][5] / T;
+                        string specie = splitted_string[0];
+                        std::transform(specie.begin(), specie.end(), specie.begin(), ::toupper);
+                        if (komponents.contains(specie))
+                        {
+                            int i_komp = komponents[specie];
+                            cout << "line = " << line << "\n";
+                            cout << "i_komp = " << i_komp << "\n";
 
-        return Hi * T;
+                            ploynom[i_komp][0] = stod(splitted_string[1]);
+                            ploynom[i_komp][1] = stod(splitted_string[2]);
+                            ploynom[i_komp][2] = stod(splitted_string[3]);
+                            ploynom[i_komp][3] = stod(splitted_string[4]);
+                            cout << specie << " " << i_komp << " " << ploynom[i_komp][0]
+                                << " " << ploynom[i_komp][1]
+                                << " " << ploynom[i_komp][2]
+                                << " " << ploynom[i_komp][3] << "\n";
+                        }
+
+                    }
+
+                }
+            }
+
+
+        }
     }
-    else {
-        return H_arr[number_cell][component_i];
-    }
+    in.close();
 }
 
-// Specific heat of ith component
-double get_Cpi(int component_i, double T, int number_cell)
+void set_polynom_diffusion(double*** polynom, std::string name_file, std::string type_polynom) {
+    std::string line;
+    std::string koeff_str = "COEFFICIENTS";
+    std::ifstream in(name_file); // îêðûâàåì ôàéë äëÿ ÷òåíèÿ
+    if (in.is_open())
+    {
+        while (getline(in, line))
+        {
+            vector splitted_string = splitString(line, ' ');
+            if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end()
+                && std::find(splitted_string.begin(), splitted_string.end(), type_polynom) != splitted_string.end())
+            {
+                getline(in, line);
+                while (getline(in, line))
+                {
+                    vector splitted_string = splitString(line, ' ');
+                    if (std::find(splitted_string.begin(), splitted_string.end(), koeff_str) != splitted_string.end())
+                        return;
+
+                    if (splitted_string.size() != 0)
+                    {
+                        string specie1 = splitted_string[0];
+                        std::transform(specie1.begin(), specie1.end(), specie1.begin(), ::toupper);
+
+                        string specie2 = splitted_string[1];
+                        std::transform(specie2.begin(), specie2.end(), specie2.begin(), ::toupper);
+
+                        if (komponents.contains(specie1) && komponents.contains(specie2))
+                        {
+                            int i_sp1 = komponents[specie1];
+                            int i_sp2 = komponents[specie2];
+                            polynom[i_sp1][i_sp2][0] = stod(splitted_string[2]);
+                            polynom[i_sp1][i_sp2][1] = stod(splitted_string[3]);
+                            polynom[i_sp1][i_sp2][2] = stod(splitted_string[4]);
+                            polynom[i_sp1][i_sp2][3] = stod(splitted_string[5]);
+
+                            polynom[i_sp2][i_sp1][0] = stod(splitted_string[2]);
+                            polynom[i_sp2][i_sp1][1] = stod(splitted_string[3]);
+                            polynom[i_sp2][i_sp1][2] = stod(splitted_string[4]);
+                            polynom[i_sp2][i_sp1][3] = stod(splitted_string[5]);
+
+                            /*cout << komponents[specie1] << " " << komponents[specie2]
+                                << " " << polynom[i_sp1][i_sp2][0]
+                                << " " << polynom[i_sp1][i_sp2][1]
+                                << " " << polynom[i_sp1][i_sp2][2]
+                                << " " << polynom[i_sp1][i_sp2][3] << "\n";*/
+                        }
+
+                    }
+
+                }
+            }
+        }
+    }
+    in.close();
+}
+std::vector<std::string> splitString(std::string str, char splitter) {
+    std::vector<std::string> result;
+    std::string current = "";
+    for (int i = 0; i < str.size(); i++) {
+        if (str[i] == splitter) {
+            if (current != "") {
+                result.push_back(current);
+                current = "";
+            }
+            continue;
+        }
+        current += str[i];
+    }
+    if (current.size() != 0)
+        result.push_back(current);
+    return result;
+}
+
+template <typename T>
+void findValue(const std::vector<T>& data, bool(*condition)(T))
 {
-    double Cpi;
-    int i = component_i;
-    if (!flag_use_save_koeffs) {
-        if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
-            Cpi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] * T + phyc.Cp_coef_hT[i][2] * T * T
-            + phyc.Cp_coef_hT[i][3] * T * T * T + phyc.Cp_coef_hT[i][4] * T * T * T * T;
-        else
-            Cpi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] * T + phyc.Cp_coef_lT[i][2] * T * T
-            + phyc.Cp_coef_lT[i][3] * T * T * T + phyc.Cp_coef_lT[i][4] * T * T * T * T;
-        return Cpi;
-    }
-    else {
-        return Cp_arr[number_cell][component_i];
-    }
-}
-
-double get_Si(int component_i, double T) {
-    double Si;
-    int i = component_i;
-
-    if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
-        Si = phyc.Cp_coef_hT[i][0] * log(T) + phyc.Cp_coef_hT[i][1] * T + phyc.Cp_coef_hT[i][2] / 2. * T * T
-        + phyc.Cp_coef_hT[i][3] / 3. * T * T * T + phyc.Cp_coef_hT[i][4] / 4. * T * T * T * T + phyc.Cp_coef_hT[i][6];
+    auto result{ std::find_if(begin(data), end(data), condition) };
+    if (result == end(data))
+        std::cout << "Value not found" << std::endl;
     else
-        Si = phyc.Cp_coef_lT[i][0] * log(T) + phyc.Cp_coef_lT[i][1] * T + phyc.Cp_coef_lT[i][2] / 2. * T * T
-        + phyc.Cp_coef_lT[i][3] / 3. * T * T * T + phyc.Cp_coef_lT[i][4] / 4. * T * T * T * T + phyc.Cp_coef_lT[i][6];
-    return Si;
+        std::cout << "Value found at position " << (result - begin(data)) << std::endl;
 }
 
-double get_Cvi(int component_i, double T, int number_cell)
-{
-    double Cpi, Cvi;
 
-    Cpi = get_Cpi(component_i, T, number_cell);
-    Cvi = Cpi - phyc.kR / mol_weight[component_i];
-    return Cvi;
-}
-
-// Enthalpy of the gas
-// Y -- mass fractions
-double get_enthalpy(int num_species, double* Y, double T, int number_cell)
-{
-    double H_ = 0;
-
-    for (int i = 0; i < num_species; i++)
-        H_ += Y[i] * get_Hi(i, T, number_cell);
-
-    return H_;
-}
-
-// P = rho * R * T
-// R -- gas constant
-// Y -- mass fractions
-double get_gas_constant(int num_gas_species, double* Y)
-{
-    // Gas Constant
-    double R = 0;
-
-    for (int i = 0; i < num_gas_species; i++)
-        R += Y[i] / mol_weight[i];
-
-    R *= phyc.kR;
-
-    return R;
-}
-
-// Specific heat of the gas
-double get_Cp(int num_species, double* Y, double T, int number_cell)
-{
-    double Cp;
-
-    Cp = 0.0;
-    for (int i = 0; i < num_species; i++)
-        Cp += Y[i] * get_Cpi(i, T, number_cell);
-
-    return Cp;
-}
-
-double get_Cv(int num_species, double* Y, double T, int number_cell)
-{
-    double Cv;
-
-    Cv = 0.0;
-    for (int i = 0; i < num_species; i++)
-        Cv += Y[i] * get_Cvi(i, T, number_cell);
-
-    return Cv;
-}
-
-double get_Lambda(int i, double T, int number_cell, char side)
-{
-    //double lambda_arg;
-    //double logt = log(T);
-    //lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-    //    + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
-    //return pow(T, 0.5) * lambda_arg * pow(10, 5);
-    if (!flag_use_save_koeffs) {
-        double lambda_arg;
-        double logt = log(T);
-        lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-            + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
-        //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
-        return exp(lambda_arg) * pow(10, 5);
-    }
-    else {
-        if (side == 'r')
-            return Lambda_arr_r[number_cell][i];
-        if (side == 'l')
-            return Lambda_arr_l[number_cell][i];
-        if (side == 'c')
-            return Lambda_arr[number_cell][i];
-    }
-}
-
-double get_Lambda5(int i, double T, int number_cell, char side)
-{
-    //double lambda_arg;
-    //double logt = log(T);
-    //lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-    //    + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
-    //return pow(T, 0.5) * lambda_arg * pow(10, 5);
-    if (!flag_use_save_koeffs) {
-        double lambda_arg;
-        double logt = log(T);
-        lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-            + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
-        //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
-        return exp(lambda_arg) * pow(10, 5);
-    }
-    else {
-        if (side == 'r')
-            return Lambda_arr_r[number_cell][i];
-        if (side == 'l')
-            return Lambda_arr_l[number_cell][i];
-        if (side == 'c')
-            return Lambda_arr[number_cell][i];
-    }
-}
 
 
 void allocate_memory() {
-    chem.T_comon = new double [num_gas_species];
-    chem.products = new double* [num_react];
-    chem.Arrh_params = new double* [num_react];
-    chem.isReversible = new bool[num_react];
-    chem.has_Third = new bool[num_react];
-    chem.ThirdBodies = new double* [num_react];
-    chem.has_low = new bool[num_react];
-    chem.Arrh_LP_params = new double* [num_react];
-    chem.has_Troe = new bool[num_react];
-    chem.Troe_params = new double* [num_react];
-    chem.M_exist = new bool[num_react];
-
-    for (int i = 0; i < num_react; i++) {
-        chem.products[i] = new double[num_gas_species];
-        chem.Arrh_params[i] = new double[3];
-        chem.ThirdBodies[i] = new double[num_gas_species];
-        chem.Arrh_LP_params[i] = new double[3];
-        chem.Troe_params[i] = new double[4];
-    }
-
     Ystart = new double[num_gas_species];
     Yend = new double[num_gas_species];
     X = new double[num_gas_species];
@@ -495,24 +397,6 @@ void allocate_memory() {
 
 
 void free_memory() {
-    delete[] chem.isReversible ;
-    delete[] chem.has_Third;
-    delete[] chem.has_low ;
-    delete[] chem.has_Troe;
-    delete[] chem.M_exist;
-
-    for (int i = 0; i < num_react; i++) {
-        delete[] chem.products[i];
-        delete[] chem.Arrh_params[i];
-        delete[] chem.ThirdBodies[i];
-        delete[]chem.Arrh_LP_params[i] ;
-        delete[] chem.Troe_params[i] ;
-    }
-    delete[] chem.products;
-    delete[] chem.Arrh_params;
-    delete[] chem.ThirdBodies ;
-    delete[] chem.Arrh_LP_params ;
-    delete[] chem.Troe_params;
 
     delete[] Ystart;
     delete[] Yend;

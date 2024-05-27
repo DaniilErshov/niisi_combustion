@@ -38,16 +38,6 @@ using namespace std;
 #define ONEPT5 RCONST(1.5)
 #define TWO    RCONST(2.0)
 
-#define H2 0
-#define H 1
-#define O2 2
-#define O 3
-#define OH 4
-#define HO2 5
-#define H2O 6
-#define H2O2 7
-#define N2 8
-
 #define Ith(v,i)    NV_Ith_S(v,i-1)
 #define IJth(A,i,j) SM_ELEMENT_D(A,i-1,j-1)
 
@@ -221,15 +211,6 @@ void makeYstart(double koeff_topl, double* Ystart);
 
 void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, double* Yinext,
     double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i, char side);
-
-std::vector<std::string> splitString(std::string str, char splitter);
-
-template <typename T>
-void findValue(const std::vector<T>& data, bool(*condition)(T));
-
-void set_polynom(double** ploynom, std::string name_file, std::string type_polynom);
-
-void set_polynom_diffusion(double*** polynom, std::string name_file, std::string type_polynom);
 
 void MakeYvectorsY(UserData data,
     double* Y, int myNx, int i, double Tl);

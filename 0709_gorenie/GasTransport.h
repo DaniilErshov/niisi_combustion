@@ -10,6 +10,7 @@ const int CK_Mode = 10;
 
 //#include "Transport.h"
 #include "constants.h"
+#include "thermodynamic.h"
 #include "iostream"
 
 extern double* mol_weight;
