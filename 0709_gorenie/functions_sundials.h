@@ -174,7 +174,8 @@ double F_rightY(UserData data, int k_spec,
     double uprev, double u, double unext, int number_cell);
 
 
-int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
+int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
+    vector<double>& u_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
 
 void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);

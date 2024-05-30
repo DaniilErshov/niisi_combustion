@@ -6,14 +6,14 @@ double Y_max = 1 - Y_N2;
 double P = 0.101325;
 double R = 8.314;
 double koeff_l = 0.4;
-double l = 0.1;
+double l = 2;
 double x_center;
 long int myiter = 0;
 long int nniters;
 double eps_func = pow(10, -8);
 double* norm;
-double Tstart = 300;
-double Tfinish = 2385.4;
+double Tstart = 400;
+double Tfinish = 1500;
 double nevyaz_Y;
 double nevyaz_T;
 double eps_x = pow(10, -6);
@@ -130,32 +130,33 @@ int main()
     fout_v << title2 << endl;
     double koeff_topl = 1;
     double tout1 = pow(10, -7);
-    double Tend = 2385.4;
+    double Tend = Tfinish;
     double T_start = Tstart;
     double T_finish = Tfinish;
     double T_center;
-    int N_x = 500;
+    int N_x = 300;
 
     x_vect.resize(N_x);
     Y_vect.resize(N_x * num_gas_species);
     T_vect.resize(N_x);
+    u_vect.resize(N_x);
     resize_koeff_vectors(N_x);
 
     makeYstart(koeff_topl, "NC7H16", 0.21, 0.79, Ystart);
-    Find_final_state_IDA(T_start, Tend, Ystart, Yend);
-    Find_final_state_KINSOL(T_start, Tend, Ystart, Yend);
     M = 60 * get_rho(Ystart, Tstart);
     int j_t = 1;
-    N_center = InitialData(N_x, x_vect, T_vect, Y_vect, M, T_start, Tend, Ystart, Yend);
+    N_center = InitialData(N_x, x_vect, T_vect, Y_vect, u_vect, M, T_start, Tend, Ystart, Yend);
     Tfinish = Tend;
 
-    double t_Y = pow(10, -7), t_full = pow(10, -6);
+    double t_Y = pow(10, -7), t_full = pow(10, -8);
     T_center = T_vect[N_center];
     ida_steps = 2000;
+    Write_to_file("detail/initial", fout, x_vect,
+        T_vect, Y_vect, u_vect, M, N_x, 1);
     integrate_All_IDA_M(N_x, x_vect,
         T_vect, Y_vect, u_vect, M, N_center, Ystart, 1, t_full);
     Write_to_file("detail/Ida_1", fout, x_vect,
-        T_vect, Y_vect, Y_vect, M, N_x, 1);
+        T_vect, Y_vect, u_vect,  M, N_x, 1);
 
 
     free_memory();

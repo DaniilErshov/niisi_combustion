@@ -325,8 +325,13 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* 
                 / Dij_res[k][j];
         }
     }
+    if (sum != 0) {
+        Dkm = (1. - Y_average[k]) / sum;
+    }
+    else {
+        return 0;
+    }
 
-    Dkm = (1. - Y_average[k]) / sum;
     //cout << "Dkm for " << name_species[k] << " = " << Dkm << "\n";
     return  -my_mol_weight(k) / W * Dkm * gradX[k];
 }
