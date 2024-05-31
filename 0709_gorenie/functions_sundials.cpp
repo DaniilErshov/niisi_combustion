@@ -402,10 +402,20 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
     fout.open(str + ".dat");
     string title2 = R"(VARIABLES= "x", "T")";
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-        title2.append(R"(, "Y_)" + komponents_str[k_spec] + R"(")");
+        if (komponents_str[k_spec] != "AR" && komponents_str[k_spec] != "HE")
+            title2.append(R"(, "Y_)" + komponents_str[k_spec] + R"(")");
     }
     fout << "TITLE=\"" << "Graphics" << "\"" << endl;
     fout << title2 << endl;
+    double Y_max_HO2 = 0;
+    double x_max_HO2 = 0;
+    for (int i = 0; i < N_x; i++) {
+        if (Y_vect[komponents["HO2"] + i * num_gas_species] > Y_max_HO2) {
+            x_max_HO2 = x_vect[i];
+            Y_max_HO2 = Y_vect[komponents["HO2"] + i * num_gas_species];
+        }
+    }
+
     for (int i = 0; i < N_x; i++) {
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
             Yi[k_spec] = Y_vect[k_spec + i * num_gas_species];
@@ -413,9 +423,10 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
         rho = get_rho(Yi, T_vect[i]);
 
         if (number == 1) {
-            fout << x_vect[i] << "  " << T_vect[i];
+            fout << x_vect[i] - x_max_HO2 << "  " << T_vect[i];
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-                fout << " " << Y_vect[k_spec + i * num_gas_species];
+                if (komponents_str[k_spec] != "AR" && komponents_str[k_spec] != "HE")
+                    fout << " " << Y_vect[k_spec + i * num_gas_species];
             }
             fout << endl;
         }

@@ -1,0 +1,3 @@
+TITLE="Graphics"
+VARIABLES= "koeff_fuel", "v", "Tend", "norm"
+1.5 17.4238 1984.44 1.12422e-10

@@ -1,0 +1,1180 @@
+#!MC 1410
+$!VarSet |LFDSFN1| = '"07_300.dat" "cantera_0.7_300.dat" "KINSOL_0.700000 300.000000.dat"'
+$!VarSet |LFDSVL1| = '"x" "T_chemk" "Y_H_chemk" "Y_H2_chemk" "Y_O_chemk" "Y_O2_chemk" "Y_OH_chemk" "Y_H2O_chemk" "Y_N2_chemk" "Y_HO2_chemk" "Y_H2O2_chemk" "Y_CO_chemk" "Y_CO2_chemk" "Y_CH2O_chemk" "Y_HCO_chemk" "Y_CH3OH_chemk" "Y_CH2OH_chemk" "Y_CH3O_chemk" "Y_CH3O2_chemk" "Y_CH4_chemk" "Y_CH3_chemk" "Y_CH2_chemk" "Y_CH2(S)_chemk" "Y_C2H6_chemk" "Y_C2H5O2_chemk" "Y_C2H5_chemk" "Y_C2H4_chemk" "Y_C2H3_chemk" "Y_C2H2_chemk" "Y_CH2CHO_chemk" "Y_CH2CO_chemk" "Y_HCCO_chemk" "Y_NC3H7_chemk" "Y_C3H6_chemk" "Y_C3H5-A_chemk" "Y_C3H5O_chemk" "Y_C3H4-A_chemk" "Y_NC3H7O2_chemk" "Y_C2H3CHO_chemk" "Y_NC7H16_chemk" "Y_C7H15_chemk" "Y_C7H15O2_chemk" "Y_C7H14OOH_chemk" "Y_C7H14_chemk" "Y_C7H14OOHO2_chemk" "Y_NC7KET_chemk" "Y_C7H14O_chemk" "Y_NC3H7CHO_chemk" "T_can" "Y_H_can" "Y_H2_can" "Y_O_can" "Y_O2_can" "Y_OH_can" "Y_H2O_can" "Y_N2_can" "Y_HO2_can" "Y_H2O2_can" "Y_CO_can" "Y_CO2_can" "Y_CH2O_can" "Y_HCO_can" "Y_CH3OH_can" "Y_CH2OH_can" "Y_CH3O_can" "Y_CH3O2_can" "Y_CH4_can" "Y_CH3_can" "Y_CH2_can" "Y_CH2(S)_can" "Y_C2H6_can" "Y_C2H5O2_can" "Y_C2H5_can" "Y_C2H4_can" "Y_C2H3_can" "Y_C2H2_can" "Y_CH2CHO_can" "Y_CH2CO_can" "Y_HCCO_can" "Y_NC3H7_can" "Y_C3H6_can" "Y_C3H5-A_can" "Y_C3H5O_can" "Y_C3H4-A_can" "Y_NC3H7O2_can" "Y_C2H3CHO_can" "Y_NC7H16_can" "Y_C7H15_can" "Y_C7H15O2_can" "Y_C7H14OOH_can" "Y_C7H14_can" "Y_C7H14OOHO2_can" "Y_NC7KET_can" "Y_C7H14O_can" "Y_NC3H7CHO_can" "Y_NC3H7CO_can" "T" "Y_H" "Y_H2" "Y_O" "Y_O2" "Y_OH" "Y_H2O" "Y_N2" "Y_HO2" "Y_H2O2" "Y_CO" "Y_CO2" "Y_CH2O" "Y_HCO" "Y_CH3OH" "Y_CH2OH" "Y_CH3O" "Y_CH3O2" "Y_CH4" "Y_CH3" "Y_CH2" "Y_CH2(S)" "Y_C2H6" "Y_C2H5O2" "Y_C2H5" "Y_C2H4" "Y_C2H3" "Y_C2H2" "Y_CH2CHO" "Y_CH2CO" "Y_HCCO" "Y_NC3H7" "Y_C3H6" "Y_C3H5-A" "Y_C3H5O" "Y_C3H4-A" "Y_NC3H7O2" "Y_C2H3CHO" "Y_NC7H16" "Y_C7H15" "Y_C7H15O2" "Y_C7H14OOH" "Y_C7H14" "Y_C7H14OOHO2" "Y_NC7KET" "Y_C7H14O" "Y_NC3H7CHO" "Y_NC3H7CO"'
+$!SetStyleBase Factory
+$!GlobalPaper 
+  PaperSizeInfo
+    {
+    Letter
+      {
+      Width = 8.5
+      Height = 11
+      LeftHardClipOffset = 0.125
+      RightHardClipOffset = 0.125
+      TopHardClipOffset = 0.125
+      BottomHardClipOffset = 0.125
+      }
+    }
+$!Page 
+  Name = 'Untitled'
+  PaperAttributes
+    {
+    BackgroundColor = White
+    IsTransparent = Yes
+    OrientPortrait = No
+    ShowGrid = Yes
+    ShowRuler = No
+    ShowPaper = No
+    PaperSize = Letter
+    RulerSpacing = OneInch
+    PaperGridSpacing = HalfInch
+    RegionInWorkArea
+      {
+      X1 = 1
+      Y1 = 0.25
+      X2 = 10
+      Y2 = 8.25
+      }
+    }
+### Frame Number 1 ###
+$!ReadDataSet  '|LFDSFN1|'
+  InitialPlotType = XYLine
+  IncludeText = No
+  IncludeGeom = No
+  ResetStyle = No
+  AssignStrandIDs = Yes
+  VarLoadMode = ByName
+  VarNameList = '|LFDSVL1|'
+$!RemoveVar |LFDSVL1|
+$!RemoveVar |LFDSFN1|
+$!FrameLayout 
+  ShowHeader = No
+  HeaderColor = Red
+  XYPos
+    {
+    X = 1
+    Y = 0.25
+    }
+  Width = 9
+  Height = 8
+$!ThreeDAxis 
+  AspectRatioLimit = 25
+  BoxAspectRatioLimit = 25
+$!PlotType  = XYLine
+$!FrameName  = 'Frame 001'
+$!GlobalTime 
+  SolutionTime = 0
+$!DeleteLineMaps 
+$!ActiveLineMaps  =  [1,14,27]
+$!GlobalLinePlot 
+  DataLabels
+    {
+    DistanceSkip = 5
+    }
+  Legend
+    {
+    Show = Yes
+    XYPos
+      {
+      X = 98.263
+      Y = 81.396
+      }
+    }
+$!LineMap  [1]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 2
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [2]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 3
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [3]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 4
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [4]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 5
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [5]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 6
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [6]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 7
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [7]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 8
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [8]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 9
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [9]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 10
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [10]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 11
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [11]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 12
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [12]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 13
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [13]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 1
+    XAxisVar = 1
+    YAxisVar = 40
+    }
+  Lines
+    {
+    Color = Green
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [14]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 49
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [15]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 50
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [16]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 99
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [17]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 52
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [18]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 53
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [19]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 54
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [20]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 55
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [21]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 56
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [22]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 57
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [23]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 58
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [24]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 59
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [25]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 60
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [26]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 2
+    XAxisVar = 1
+    YAxisVar = 87
+    }
+  Lines
+    {
+    Color = Blue
+    LinePattern = Dashed
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [27]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 97
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [28]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 98
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [29]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 99
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [30]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 100
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [31]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 101
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [32]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 102
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [33]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 103
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Red
+    FillColor = Red
+    }
+  BarCharts
+    {
+    Color = Red
+    FillColor = Red
+    }
+  ErrorBars
+    {
+    Color = Red
+    }
+$!LineMap  [34]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 104
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Green
+    FillColor = Green
+    }
+  BarCharts
+    {
+    Color = Green
+    FillColor = Green
+    }
+  ErrorBars
+    {
+    Color = Green
+    }
+$!LineMap  [35]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 105
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [36]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 106
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
+    }
+$!LineMap  [37]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 107
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  BarCharts
+    {
+    Color = Custom3
+    FillColor = Custom3
+    }
+  ErrorBars
+    {
+    Color = Custom3
+    }
+$!LineMap  [38]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 108
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  BarCharts
+    {
+    Color = Purple
+    FillColor = Purple
+    }
+  ErrorBars
+    {
+    Color = Purple
+    }
+$!LineMap  [39]
+  Name = '&DV&'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 135
+    }
+  Lines
+    {
+    Color = Red
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!XYLineAxis 
+  DepXToYRatio = 1
+$!XYLineAxis 
+  XDetail 1
+    {
+    RangeMin = -1
+    RangeMax = 1
+    GRSpacing = 0.5
+    }
+$!XYLineAxis 
+  YDetail 1
+    {
+    RangeMin = 300
+    RangeMax = 1902.0729109985352352
+    GRSpacing = 500
+    }
+$!FrameControl ActivateByNumber
+  Frame = 1
+$!SetStyleBase Config
