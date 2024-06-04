@@ -123,9 +123,9 @@ int main()
     ofstream fout;
     double X_H2O, X_H2, X_O2, X_N2;
 
-    for (double koeff_topl = 1; koeff_topl <= 1.6; koeff_topl += 0.5)
+    for (double koeff_topl = 1; koeff_topl <= 1.0; koeff_topl += 0.5)
     {
-        for (Tstart = 300; Tstart < 800; Tstart += 200) {
+        for (Tstart = 300; Tstart < 301; Tstart += 200) {
             fout_v.open("detail/v_" + to_string(Tstart) + "_" + to_string(koeff_topl) + "_.dat");
             string title2 = R"(VARIABLES= "koeff_fuel", "v", "Tend", "norm")";
             fout_v << "TITLE=\"" << "Graphics" << "\"" << endl;
@@ -192,7 +192,7 @@ int main()
             //eps = pow(10, -3);
             //integrate_All_IDA_M(N_x, x_vect,
             //    T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
-            while (N_x < 400)
+            while (N_x < 300)
             {
                 cout << to_string(koeff_topl) << " N_x = " << N_x << "\n";
                 if (number_epoch > 8) add_cell = 0;
@@ -200,13 +200,9 @@ int main()
                 Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, add_cell, add_cell_start, T_center);
                 //ida_steps = 10;
                 //eps = pow(10, -3);
-                if (N_x > 30) {
-                    flag_use_save_koeffs = 1;
-                    save_chem_koeffs = 1;
-                }
-                else {
-                    flag_use_save_koeffs = 0;
-                }
+                flag_use_save_koeffs = 1;
+                save_chem_koeffs = 1;
+                update_koeffs = 1;
                 //integrate_All_IDA_M(N_x, x_vect,
                 //    T_vect, Y_vect, M, N_center, Ystart, 1, t_full);
                 Integrate_Kinsol(N_x, x_vect,
@@ -228,8 +224,10 @@ int main()
                 add_cell = 2;
             }
 
-            flag_use_save_koeffs = 0;
-            save_chem_koeffs = 0;
+            flag_use_save_koeffs = 1;
+            save_chem_koeffs = 1;
+            update_koeffs = 1;
+            Add_elem_simple(T_vect, Y_vect, x_vect, N_x, N_center, 0.001, add_cell, add_cell_start, T_center);
             Integrate_Kinsol(N_x, x_vect,
                 T_vect, Y_vect, M, N_center, Ystart, 6);
             cout << to_string(koeff_topl) << " v = " << M / get_rho(Ystart, Tstart) << "\n";
@@ -242,8 +240,8 @@ int main()
             fout_v << koeff_topl << " " << M / get_rho(Ystart, Tstart) << " " << T_vect[T_vect.size() - 1] << " "
                 << norm[0] << "\n";
             cout << "fout_v did\n";
+            fout_v.close();
         }
-        fout_v.close();
     }
     
 

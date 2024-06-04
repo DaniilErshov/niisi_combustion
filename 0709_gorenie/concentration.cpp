@@ -86,8 +86,13 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
     double sum_ThirdBodies;
     bool M_exist = 1;
     auto& species = chec.chemkinReader->species();
-
-    if (flag_use_save_koeffs == 0 || save_chem_koeffs == 0) {
+    if (update_koeffs == 0 && save_chem_koeffs == 1) {
+        for (int i = 0; i < num_react; i++) {
+            forward[i] = forward_arr_save[num_cell][i];
+            reverse[i] = reverse_arr_save[num_cell][i];
+        }
+    }
+    else {
         //define TROE pressure dependence
         for (int i = 0; i < num_react; i++) {
             auto& Arrhenius = chec.chemkinReader->reactions()[i].getArrhenius();
@@ -239,18 +244,15 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
             //cout << "reverse true =  " << reverse[i] << "\n";
             //cout << "\n";
         }
-    } else {
-        for (int i = 0; i < num_react; i++) {
-            forward[i] = forward_arr_save[num_cell][i];
-            reverse[i] = reverse_arr_save[num_cell][i];
-        }
     }
-    if (save_chem_koeffs == 1) {
+       
+    if (update_koeffs == 1 && save_chem_koeffs == 1) {
         for (int i = 0; i < num_react; i++) {
             forward_arr_save[num_cell][i] = forward[i];
             reverse_arr_save[num_cell][i] = reverse[i];
         }
     }
+
 
     //find equilib konstant with THIRDBODY
     for (int i = 0; i < num_react; i++) {
