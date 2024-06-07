@@ -134,7 +134,7 @@ int main()
     double T_start = Tstart;
     double T_finish = Tfinish;
     double T_center;
-    int N_x = 300;
+    int N_x = 150;
 
     x_vect.resize(N_x);
     Y_vect.resize(N_x * num_gas_species);
@@ -142,13 +142,12 @@ int main()
     u_vect.resize(N_x);
     resize_koeff_vectors(N_x);
 
-    makeYstart(koeff_topl, "NC7H16", 0.21, 0.79, Ystart);
-    M = 60 * get_rho(Ystart, Tstart);
+    M = 0;
     int j_t = 1;
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, u_vect, M, T_start, Tend, Ystart, Yend);
     Tfinish = Tend;
 
-    double t_Y = pow(10, -7), t_full = pow(10, -8);
+    double t_Y = pow(10, -7), t_full = pow(10, -7);
     T_center = T_vect[N_center];
     ida_steps = 2000;
     Write_to_file("detail/initial", fout, x_vect,

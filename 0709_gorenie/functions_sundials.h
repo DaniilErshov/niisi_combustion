@@ -154,7 +154,7 @@ typedef struct {
 } *UserData;
 
 
-double F_right_rho(UserData data,
+double F_right_u(UserData data,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext,
     double uprev, double u, double unext,
     int number_cell);

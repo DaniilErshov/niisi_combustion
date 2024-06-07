@@ -11,9 +11,8 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     vector<double>& u_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend)
 {
     double h = l / (Nx - 1);
-    double x_start = 0.5;
-    //double x_start = 0.1;
-    //double x_finish = 0.2;
+    double x_start = 0.3 * l;
+    double x_finish = (1 - 0.3) * l;
 
     double j = 0;
     //std::cout << "M = " << M << "\n";
@@ -30,8 +29,8 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
         }
         else {
             //T_vect[i] = (Tfinish - Tstart) / (x_finish - x_start) * (x_vect[i] - x_start) + Tstart;
-            T_vect[i] = Tfinish;
-            j++;
+            //T_vect[i] = Tfinish;
+            T_vect[i] = Tstart;
         }
         u_vect[i] = 0;
     }
@@ -51,19 +50,31 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     Xi[komponents["N2"]] = koeff_N2 / (koeff_O2 + koeff_N2);
     moleFraction_to_massFraction(Xi, Yi);
 
+    Ystart[komponents["O2"]] = 0;
+    Ystart[komponents["N2"]] = 0;
+    Ystart[komponents["H2"]] = 1;
+    Yend[komponents["O2"]] = Yi[komponents["O2"]];
+    Yend[komponents["N2"]] = Yi[komponents["N2"]];
+    Yend[komponents["H2"]] = Yi[komponents["H2"]];
+
     for (int i = 0; i < Nx; i++)
     {
         if (x_vect[i] < x_start) {
             for (int k = 0; k < num_gas_species; k++) {
-                Y_vect[k + i * num_gas_species] = 0;
+                Y_vect[k + i * num_gas_species] = Ystart[k];
                 //Y_vect[k + i * num_gas_species] = Ystart[k] + (Yend[k] - Ystart[k]) / (x_finish - x_start) * (x_vect[i] - x_start);
             }
-            Y_vect[komponents["NC7H16"] + i * num_gas_species] = 1;
         }
-        else {
+        if (x_vect[i] >= x_start && x_vect[i] <= x_finish) {
             for (int k = 0; k < num_gas_species; k++) {
-                Y_vect[k + i * num_gas_species] = Yi[k];
-                //Y_vect[k + i * num_gas_species] = Ystart[k] + (Yend[k] - Ystart[k]) / (x_finish - x_start) * (x_vect[i] - x_start);
+                //Y_vect[k + i * num_gas_species] = Yi[k];
+                Y_vect[k + i * num_gas_species] = Ystart[k] + (Yend[k] - Ystart[k]) / (x_finish - x_start) * (x_vect[i] - x_start);
+                //Y_vect[komponents["H2"] + i * num_gas_species] = 1;
+            }
+        }
+        if (x_vect[i] > x_finish) {
+            for (int k = 0; k < num_gas_species; k++) {
+                Y_vect[k + i * num_gas_species] = Yend[k];
             }
         }
     }
@@ -246,19 +257,26 @@ double F_right(UserData data,
         //slag_chem += data->ydot[k] * myget_Hi(k, T) * my_mol_weight(k);
     }
 
-    //slag_diff = get_dCpi(Cpn, T);
-    slag_diff = 0;
-    slag_chem = get_dHiRT(Hn, T);
-
     make_averageY(X_tmp, Xi, Xinext);
     double lambda_right = Lambda_All(X_tmp, (Tnext + T) / 2., number_cell, 'r');
+    //cout << "lambda_right = " << lambda_right << "\n";
     make_averageY(X_tmp, Xi, Xiprev);
     double lambda_left = Lambda_All(X_tmp, (T + Tprev) / 2., number_cell, 'l');
+    //cout << "lambda_left = " << lambda_left << "\n";
     double M = get_rho(Yi, T) * u;
-    return (2. / (h + h_left)) / x / x *
-        (lambda_right * (Tnext - T) / h * pow((xnext + x) / 2., 2) 
-            - lambda_left * (T - Tprev) / h_left * pow((x + xprev) / 2., 2))
-        - Cp * M * dTdx + slag_chem + slag_diff;
+    double dTdr_r = (Tnext - T) / h;
+    double dTdr_l = (T - Tprev) / h_left;
+    double x_r = (xnext + x) / 2.;
+    double x_l = (x + xprev) / 2.;
+    double conduct_slag = (2. / (xnext - xprev)) / x / x *
+        (lambda_right * dTdr_r * pow(x_r, 2)
+            - lambda_left * dTdr_l * pow(x_l, 2));
+
+    //slag_diff = get_dCpi(Cpn, T);
+    slag_diff = 0;
+    //slag_chem = get_dHiRT(Hn, T);
+    slag_chem = 0;
+    return conduct_slag - Cp * M * dTdx + slag_chem + slag_diff;
 
 }
 
@@ -286,12 +304,14 @@ double F_rightY(UserData data, int k_spec,
     //cout << "\n\n";
 
     slag_diff = (rhoYkVk_r * pow(x_r, 2) - rhoYkVk_l * pow(x_l, 2)) / (x_r - x_l) / x / x;
-    slag_chem = my_mol_weight(k_spec) * ydot[k_spec];
+    //slag_chem = my_mol_weight(k_spec) * ydot[k_spec];
+    slag_chem = 0;
     //cout << "slag_chem =  " << slag_chem << "\n";
     //cout << "slag_diff =  " << slag_diff << "\n";
     double M = get_rho(Yi, T) * u;
-    return -M * (h_left / h / (h + h_left) * Yinext[k_spec] + (h - h_left) / h / h_left * Yi[k_spec] - h / h_left / (h + h_left) * Yiprev[k_spec])
-        + slag_chem + slag_diff;
+    double dYdr = (h_left / h / (h + h_left) * Yinext[k_spec] + (h - h_left) / h / h_left * Yi[k_spec] - h / h_left / (h + h_left) * Yiprev[k_spec]);
+    //cout << " slag_diff = " << slag_diff << "\n";
+    return -M * (dYdr) + slag_chem - slag_diff;
 }
 
 void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
@@ -299,7 +319,7 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
     double x_start, x_finish, D;
     double rho;
     fout.open(str + ".dat");
-    string title2 = R"(VARIABLES= "x", "T", "u",)";
+    string title2 = R"(VARIABLES= "x", "T", "rho", "u",)";
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
         title2.append(R"(, "Y_)" + komponents_str[k_spec] + R"(")");
     }
@@ -312,7 +332,7 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
         rho = get_rho(Yi, T_vect[i]);
 
         if (number == 1) {
-            fout << x_vect[i] << "  " << T_vect[i] << " " << u_vect[i];
+            fout << x_vect[i] << "  " << T_vect[i]  << " " << rho << " " << u_vect[i];
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 fout << " " << Y_vect[k_spec + i * num_gas_species];
             }
@@ -356,7 +376,7 @@ void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, doubl
         Vc_side -= Ykvk_side[k];
         //cout << "k = " << komponents_str[k] << "  Ykvk = " << Ykvk_side[k] << "\n";
     }
-
+   // cout << "\n";
 }
 
 void MakeYvectors_kins(UserData data,
@@ -364,16 +384,16 @@ void MakeYvectors_kins(UserData data,
     //cout << "i = " << i << "\n";
     for (int j = 0; j < num_gas_species; j++) {
 
-        Yi[j] = Y[j + (i - 1) * (num_gas_species + 1) + i - 1];
+        Yi[j] = Y[j + (i - 1) * (num_gas_species + 2)];
         if (i == 1) {
-            Yiprev[j] = 0;
-            Yiprev[komponents["NC7H16"]] = 1;
+            Yiprev[j] = Yi[j];
+            //Yiprev[j] = 0;
+            //Yiprev[komponents["H2"]] = 1;
         }
-
-        else Yiprev[j] = Y[j + (i - 2) * (num_gas_species + 1) + i - 2];
+        else Yiprev[j] = Y[j + (i - 2) * (num_gas_species + 2)];
 
         if (i == myNx - 2)  Yinext[j] = Yi[j];
-        else  Yinext[j] = Y[j + (i) * (num_gas_species + 1) + i];
+        else  Yinext[j] = Y[j + (i) * (num_gas_species + 2)];
     }
 }
 
@@ -483,20 +503,22 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     int i_temp = 0;
     for (int i = 1; i < N_x - 1; i++) {
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            consval[i_temp] = 0.0;   /*constraint*/
+            consval[i_temp] = 1.0;   /*constraint*/
             yval[i_temp] = Y_vect[i * num_gas_species + k_spec];
             atval[i_temp] = pow(10, -5);
             id_val[i_temp] = 1.;
+            Yi[k_spec] = Y_vect[i * num_gas_species + k_spec];
             //cout << "Yi = " << i_temp << "   = " << yval[i_temp] << endl;
             i_temp++;
         }
+        double rho = get_rho(Yi, T_vect[i]);
         yval[i_temp] = T_vect[i];
         consval[i_temp] = 1.0;
         atval[i_temp] = pow(10, 0);
         id_val[i_temp] = 1.;
         //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl << endl;
         i_temp++;
-        yval[i_temp] = u_vect[i];
+        yval[i_temp] =  u_vect[i];
         atval[i_temp] = pow(10, -3);
         consval[i_temp] = 0.0;
         id_val[i_temp] = 0;
@@ -576,36 +598,33 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
         find_diff_slag(data, T_prev, T_curr, Yiprev, Yi, Xiprev, Xi, YkVk_l, Y_tmp_l, X_tmp_l, gradX_l, data->rho_l, data->Vc_l, i - 1, 'l');
 
         rho = get_rho(Yi, T_curr);
+        double rho_l = get_rho(Yiprev, T_prev);
+        double rho_r = get_rho(Yinext, T_next);
+
+
+        double Cp = get_Cp(num_gas_species, Yi, T_curr, i);
         sumY = 0;
         double dWdt = 0;
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            int jop;
             ypval[i_temp] = F_rightY(data, k_spec,
                 T_prev, T_curr, T_next,
                 x_vect[i - 1], x_vect[i], x_vect[i + 1], 
                 u_prev, u_curr, u_next, i) / rho;
             //cout << "i_temp initial  = " << i_temp << " Y  = " << ypval[i_temp] << "\n";
-            dWdt += ypval[i_temp] / phyc.mol_weight[k_spec];
             i_temp++;
         }
-        dWdt *= -pow(get_W(Yi), 2);
-        double Cp = get_Cp(num_gas_species, Yi, T_curr, i);
-
         //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
         ypval[i_temp] = F_right(data,
             T_prev, T_curr, T_next,
             x_vect[i - 1], x_vect[i], x_vect[i + 1], 
             u_prev, u_curr, u_next, i) / rho / Cp;
-        double dTdt = ypval[i_temp];
         //cout << "i_temp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
         i_temp++;
-        double drhodt = dWdt * P / R / T_curr - P * get_W(Yi) / R / pow(T_curr, 2) * dTdt;
 
-        ypval[i_temp] = 0;
-        cout << "ind = " << i_temp << " last eq = " << drhodt - F_right_rho(data,
+        ypval[i_temp] = F_right_u(data,
             T_prev, T_curr, T_next,
             x_vect[i - 1], x_vect[i], x_vect[i + 1],
-            u_prev, u_curr, u_next, i) << "\n\n";
+            u_prev, u_curr, u_next, i);
 
         i_temp++;
     }
@@ -649,12 +668,12 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
     //IDASetMaxOrd(mem, 1);
     //IDASetInitStep(mem, pow(10, -7));
-    tout = RCONST(0.00001);
-    retval = IDASetId(mem, id);
-    if (check_retval(&retval, "IDASetId", 1)) return(1);
+    tout = RCONST(0.0000);
+    //retval = IDASetId(mem, id);
+    //if (check_retval(&retval, "IDASetId", 1)) return(1);
 
-    retval = IDACalcIC(mem, 1, tout);
-    if (check_retval(&retval, "IDACalcIC", 1)) return(1);
+    //retval = IDACalcIC(mem, 1, tout);
+    //if (check_retval(&retval, "IDACalcIC", 1)) return(1);
     /* In loop, call IDASolve, print results, and test for error.
         Break out of loop when NOUT preset output times have been reached. */
 
@@ -672,32 +691,54 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 
     data->N_m = 0;
-    while (iout < ida_steps) {
+    while (iout < 50000) {
         retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
-
-        cout << "t = " << tout << "\n";
         if (check_retval(&retval, "IDASolve", 1)) return(1);
         iout++;
         tout1 *= 1.0;
         tout += tout1;
-    }
-    i_temp = 0;
-    for (int i = 1; i < N_x - 1; i++) {
-        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            Y_vect[i * num_gas_species + k_spec] = yval[i_temp] - eps;
-            i_temp++;
-        }
-        T_vect[i] = yval[i_temp];
-        i_temp++;
-        u_vect[i] = yval[i_temp];
-        //cout << "i = " << i << "M = " << yval[i_temp] << "\n";
-        i_temp++;
-    }
-    for (int i = 0; i < num_gas_species; i++) {
-        Y_vect[(num_gas_species) * (N_x - 1) + i] = Y_vect[(num_gas_species) * (N_x - 2) + i];
-    }
 
-    T_vect[N_x - 1] = T_vect[N_x - 2];
+        i_temp = 0;
+        double sum_rho = 0;
+        double sum_rho_H2 = 0;
+        double sum_rho_O2 = 0;
+        double sum_rho_N2 = 0;
+        if (iout % 1000 == 0) {
+            for (int i = 1; i < N_x - 1; i++) {
+                for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+                    Y_vect[i * num_gas_species + k_spec] = yval[i_temp];
+                    i_temp++;
+                    Yi[k_spec] = Y_vect[i * num_gas_species + k_spec];
+                }
+                double rho = get_rho(Yi, yval[i_temp]);
+
+                sum_rho += rho * 4  / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
+                sum_rho_H2 += rho * Yi[komponents["H2"]] * 4 / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
+                sum_rho_O2 += rho * Yi[komponents["O2"]] * 4 / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
+                sum_rho_N2 += rho * Yi[komponents["N2"]] * 4 / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
+
+                T_vect[i] = yval[i_temp];
+                i_temp++;
+                u_vect[i] = yval[i_temp];
+                //cout << "i = " << i << "M = " << yval[i_temp] << "\n";
+                i_temp++;
+            }
+            for (int i = 0; i < num_gas_species; i++) {
+                Y_vect[(num_gas_species) * (N_x - 1) + i] = Y_vect[(num_gas_species) * (N_x - 2) + i];
+            }
+
+            T_vect[N_x - 1] = T_vect[N_x - 2];
+            cout << "t = " << tout << "\n";
+            cout << "sum_rho = " << sum_rho << "\n";
+            cout << "sum_rho_H2 = " << sum_rho_H2 << "\n";
+            cout << "sum_rho_O2 = " << sum_rho_O2 << "\n";
+            cout << "sum_rho_N2 = " << sum_rho_N2 << "\n";
+            Write_to_file("detail/Ida_" + to_string(iout), fout, x_vect,
+                T_vect, Y_vect, u_vect, M, N_x, 1);
+        }
+
+    }
+   
 
     std::cout << "tout = " << tout << "\n";
     //cout << "\n\n\n\n";
@@ -790,7 +831,6 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
         chem_vel(Sn, Hn, forward_arr, reverse_arr, equilib_arr,
             T_curr, Xi, ydot, i);
 
-
         Get_mole_fr(Xiprev, Yiprev); Get_mole_fr(Xi, Yi); Get_mole_fr(Xinext, Yinext);
 
         find_diff_slag(data, T_curr, T_next, Yi, Yinext, Xi, Xinext, YkVk_r, Y_tmp_r, X_tmp_r, gradX_r, data->rho_r, data->Vc_r, i, 'r');
@@ -798,66 +838,74 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
         find_diff_slag(data, T_prev, T_curr, Yiprev, Yi, Xiprev, Xi, YkVk_l, Y_tmp_l, X_tmp_l, gradX_l, data->rho_l, data->Vc_l, i - 1, 'l');
 
         rho = get_rho(Yi, T_curr);
+        double rho_l = get_rho(Yiprev, T_prev);
+        double rho_r = get_rho(Yinext, T_next);
+
         sumY = 0;
         double dWdt = 0;
         int i_temp_start = i_temp;
+
         for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
             rval[i_temp] = rho * ypval[i_temp] - F_rightY(data, k_spec,
                 T_prev, T_curr, T_next,
                 x_vect[i - 1], x_vect[i], x_vect[i + 1], 
                 u_prev, u_curr, u_next, i);
 
-           /* cout << "rval Y i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
-            cout << "yval Y i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
-            cout << "ypval Y i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";*/
-
-            if (rval[i_temp] != rval[i_temp]) nan_flag = 1;
-            dWdt += ypval[i_temp] / phyc.mol_weight[k_spec];
+            //cout << "rval Y " << komponents_str[k_spec] << " i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
+            //cout << "yval Y " << komponents_str[k_spec] << " i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
+            //cout << "fright Y " << komponents_str[k_spec] << " i_temp = " << i_temp << " = " << F_rightY(data, k_spec,
+            //    T_prev, T_curr, T_next,
+            //    x_vect[i - 1], x_vect[i], x_vect[i + 1],
+            //    u_prev, u_curr, u_next, i) << "\n";
+            //cout << "ypval Y " << komponents_str[k_spec] << " i_temp = " << i_temp << " = " << rho * ypval[i_temp] <<  "\n";
             i_temp++;
         }
-        dWdt *= -pow(get_W(Yi), 2);
-
         Cp = get_Cp(num_gas_species, Yi, T_curr, i);
 
-        double dTdt = ypval[i_temp];
         rval[i_temp] = rho * Cp * ypval[i_temp] - F_right(data,
             T_prev, T_curr, T_next,
             x_vect[i - 1], x_vect[i], x_vect[i + 1], 
             u_prev, u_curr, u_next, i);
 
-       /* cout << "rval T i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
-        cout << "yval T i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
-        cout << "ypval T i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";*/
+        //cout << "rval T i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
+        //cout << "yval T i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
+        //cout << "fright T i_temp = " << i_temp << " = " << F_right(data,
+        //    T_prev, T_curr, T_next,
+        //    x_vect[i - 1], x_vect[i], x_vect[i + 1],
+        //    u_prev, u_curr, u_next, i) << "\n";
+        //cout << "ypval T i_temp = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
 
-        if (rval[i_temp] != rval[i_temp]) nan_flag = 1;
         i_temp++;
-        double drhodt = dWdt * P / R / T_curr - P * get_W(Yi) / R / pow(T_curr, 2) * dTdt;
 
-        rval[i_temp] = drhodt - F_right_rho(data,
+        rval[i_temp] = ypval[i_temp] - F_right_u(data,
             T_prev, T_curr, T_next,
-            x_vect[i - 1], x_vect[i], x_vect[i + 1], 
+            x_vect[i - 1], x_vect[i], x_vect[i + 1],
             u_prev, u_curr, u_next, i);
+        //cout << "rval u i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
+        //cout << "yval u i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
+        //cout << "fright u i_temp = " << i_temp << " = " << F_right_u(data,
+        //    T_prev, T_curr, T_next,
+        //    x_vect[i - 1], x_vect[i], x_vect[i + 1],
+        //    u_prev, u_curr, u_next, i) << "\n";
+        //cout << "ypval u i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";
+        i_temp++;
 
-       /* cout << "rval u i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
-        cout << "yval u i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
-        cout << "ypval u i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";*/
-
-        int i_temp_finish = i_temp;
-        if (rval[i_temp] != rval[i_temp]) nan_flag = 1;
-        if (nan_flag) {
-            cout << "i = " << i << "\n";
-            for (int i_temp2 = i_temp_start; i_temp2 <= i_temp_finish; i_temp2++) {
-                cout << "rval i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
-                cout << "yval i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
-                cout << "ypval i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";
-            }
-        }
+        //int i_temp_finish = i_temp;
+        //if (rval[i_temp] != rval[i_temp]) nan_flag = 1;
+        //if (nan_flag) {
+        //    cout << "i = " << i << "\n";
+        //    for (int i_temp2 = i_temp_start; i_temp2 <= i_temp_finish; i_temp2++) {
+        //        cout << "rval i_temp = " << i_temp << " = " << rval[i_temp] << "\n";
+        //        cout << "yval i_temp = " << i_temp << " = " << yval[i_temp] << "\n";
+        //        cout << "ypval i_temp = " << i_temp << " = " << ypval[i_temp] << "\n\n\n\n\n";
+        //    }
+        //}
 
     }
     return 0;
 }
 
-double F_right_rho(UserData data,
+double F_right_u(UserData data,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, 
     double uprev, double u, double unext, 
     int number_cell){
@@ -868,49 +916,19 @@ double F_right_rho(UserData data,
     double rho = get_rho(Yi, T);
     double rho_l = get_rho(Yiprev, Tprev);
 
-    double d_r2_rho_u_dr = (h_left / h / (h + h_left) * xnext * xnext * rho_r * unext + 
-        (h - h_left) / h / h_left * x * x * rho * u - 
-        h / h_left / (h + h_left) * xprev * xprev * rho_l * uprev);
+    double du_dr = (h_left / h / (h + h_left) * unext  +
+        (h - h_left) / h / h_left * rho * u -
+        h / h_left / (h + h_left) * rho_l * uprev);
 
-    return -1. / x / x * d_r2_rho_u_dr;
+    return -u * du_dr;
 
 }
 
 void set_Dij_res(double T, int number_cell, char side) {
-    if (!flag_use_save_koeffs) {
-        for (unsigned short int i = 0; i < num_gas_species; ++i) {
-            for (unsigned short int j = i; j < num_gas_species; ++j) {
-                Dij_res[i][j] = Dij_func5(i, j, T, number_cell);
-                Dij_res[j][i] = Dij_res[i][j];
-            }
-        }
-    }
-    else {
-        if (side == 'r') {
-            for (unsigned short int i = 0; i < num_gas_species; ++i) {
-                for (unsigned short int j = i; j < num_gas_species; ++j) {
-                    Dij_res[i][j] = Dij_arr_r[number_cell][i][j];
-                    Dij_res[j][i] = Dij_res[i][j];
-                }
-            }
-        }
-
-        if (side == 'c') {
-            for (unsigned short int i = 0; i < num_gas_species; ++i) {
-                for (unsigned short int j = i; j < num_gas_species; ++j) {
-                    Dij_res[i][j] = Dij_arr[number_cell][i][j];
-                    Dij_res[j][i] = Dij_res[i][j];
-                }
-            }
-        }
-
-        if (side == 'l') {
-            for (unsigned short int i = 0; i < num_gas_species; ++i) {
-                for (unsigned short int j = i; j < num_gas_species; ++j) {
-                    Dij_res[i][j] = Dij_arr_l[number_cell + 1][i][j];
-                    Dij_res[j][i] = Dij_res[i][j];
-                }
-            }
+    for (unsigned short int i = 0; i < num_gas_species; ++i) {
+        for (unsigned short int j = i; j < num_gas_species; ++j) {
+            Dij_res[i][j] = Dij_func5(i, j, T, number_cell);
+            Dij_res[j][i] = Dij_res[i][j];
         }
     }
 }

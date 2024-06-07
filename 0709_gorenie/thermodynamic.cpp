@@ -15,7 +15,7 @@ double Lambda_All(double* X, double T, int number_cell, char side)
     double res2 = 0;
 
     for (int i = 0; i < num_gas_species; i++) {
-        double lambda_i = get_Lambda5(i, T, number_cell, side);
+        double lambda_i = get_Lambda(i, T, number_cell, side);
         res1 += X[i] * lambda_i;
         res2 += X[i] / lambda_i;
     }
@@ -52,19 +52,14 @@ double get_Hi(int component_i, double T, int number_cell)
 {
     double Hi;
     int i = component_i;
-    if (!flag_use_save_koeffs) {
-        if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
-            Hi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] / 2. * T + phyc.Cp_coef_hT[i][2] / 3. * T * T
-            + phyc.Cp_coef_hT[i][3] / 4. * T * T * T + phyc.Cp_coef_hT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_hT[i][5] / T;
-        else
-            Hi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] / 2. * T + phyc.Cp_coef_lT[i][2] / 3. * T * T
-            + phyc.Cp_coef_lT[i][3] / 4. * T * T * T + phyc.Cp_coef_lT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_lT[i][5] / T;
+    if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
+        Hi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] / 2. * T + phyc.Cp_coef_hT[i][2] / 3. * T * T
+        + phyc.Cp_coef_hT[i][3] / 4. * T * T * T + phyc.Cp_coef_hT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_hT[i][5] / T;
+    else
+        Hi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] / 2. * T + phyc.Cp_coef_lT[i][2] / 3. * T * T
+        + phyc.Cp_coef_lT[i][3] / 4. * T * T * T + phyc.Cp_coef_lT[i][4] / 5. * T * T * T * T + phyc.Cp_coef_lT[i][5] / T;
 
-        return Hi * T;
-    }
-    else {
-        return H_arr[number_cell][component_i];
-    }
+    return Hi * T;
 }
 
 // Specific heat of ith component
@@ -72,18 +67,13 @@ double get_Cpi(int component_i, double T, int number_cell)
 {
     double Cpi;
     int i = component_i;
-    if (!flag_use_save_koeffs) {
-        if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
-            Cpi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] * T + phyc.Cp_coef_hT[i][2] * T * T
-            + phyc.Cp_coef_hT[i][3] * T * T * T + phyc.Cp_coef_hT[i][4] * T * T * T * T;
-        else
-            Cpi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] * T + phyc.Cp_coef_lT[i][2] * T * T
-            + phyc.Cp_coef_lT[i][3] * T * T * T + phyc.Cp_coef_lT[i][4] * T * T * T * T;
-        return Cpi;
-    }
-    else {
-        return Cp_arr[number_cell][component_i];
-    }
+    if (T > chec.chemkinReader->species()[component_i].thermo().getTCommon())
+        Cpi = phyc.Cp_coef_hT[i][0] + phyc.Cp_coef_hT[i][1] * T + phyc.Cp_coef_hT[i][2] * T * T
+        + phyc.Cp_coef_hT[i][3] * T * T * T + phyc.Cp_coef_hT[i][4] * T * T * T * T;
+    else
+        Cpi = phyc.Cp_coef_lT[i][0] + phyc.Cp_coef_lT[i][1] * T + phyc.Cp_coef_lT[i][2] * T * T
+        + phyc.Cp_coef_lT[i][3] * T * T * T + phyc.Cp_coef_lT[i][4] * T * T * T * T;
+    return Cpi;
 }
 
 double get_Si(int component_i, double T) {
@@ -166,22 +156,12 @@ double get_Lambda(int i, double T, int number_cell, char side)
     //lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
     //    + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
     //return pow(T, 0.5) * lambda_arg * pow(10, 5);
-    if (!flag_use_save_koeffs) {
-        double lambda_arg;
-        double logt = log(T);
-        lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-            + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
-        //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
-        return exp(lambda_arg) * pow(10, 5);
-    }
-    else {
-        if (side == 'r')
-            return Lambda_arr_r[number_cell][i];
-        if (side == 'l')
-            return Lambda_arr_l[number_cell][i];
-        if (side == 'c')
-            return Lambda_arr[number_cell][i];
-    }
+    double lambda_arg;
+    double logt = log(T);
+    lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
+        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
+    //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
+    return exp(lambda_arg) * pow(10, 5);
 }
 
 double get_Lambda5(int i, double T, int number_cell, char side)
@@ -191,20 +171,10 @@ double get_Lambda5(int i, double T, int number_cell, char side)
     //lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
     //    + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt + lambda_polynom[i][4] * logt * logt * logt * logt;
     //return pow(T, 0.5) * lambda_arg * pow(10, 5);
-    if (!flag_use_save_koeffs) {
-        double lambda_arg;
-        double logt = log(T);
-        lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
-            + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
-        //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
-        return exp(lambda_arg) * pow(10, 5);
-    }
-    else {
-        if (side == 'r')
-            return Lambda_arr_r[number_cell][i];
-        if (side == 'l')
-            return Lambda_arr_l[number_cell][i];
-        if (side == 'c')
-            return Lambda_arr[number_cell][i];
-    }
+    double lambda_arg;
+    double logt = log(T);
+    lambda_arg = lambda_polynom[i][0] + lambda_polynom[i][1] * logt
+        + lambda_polynom[i][2] * logt * logt + lambda_polynom[i][3] * logt * logt * logt;
+    //cout << "Lambda " << " " << T << " " << name_species[i] << " = " << exp(lambda_arg) * pow(10, 5) << '\n';
+    return exp(lambda_arg) * pow(10, 5);
 }
