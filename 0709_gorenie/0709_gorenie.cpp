@@ -6,7 +6,7 @@ double Y_max = 1 - Y_N2;
 double P = 0.101325;
 double R = 8.314;
 double koeff_l = 0.4;
-double l = 2;
+double l = 20;
 double x_center;
 long int myiter = 0;
 long int nniters;
@@ -134,7 +134,7 @@ int main()
     double T_start = Tstart;
     double T_finish = Tfinish;
     double T_center;
-    int N_x = 150;
+    int N_x = 1000;
 
     x_vect.resize(N_x);
     Y_vect.resize(N_x * num_gas_species);
@@ -147,7 +147,7 @@ int main()
     N_center = InitialData(N_x, x_vect, T_vect, Y_vect, u_vect, M, T_start, Tend, Ystart, Yend);
     Tfinish = Tend;
 
-    double t_Y = pow(10, -7), t_full = pow(10, -7);
+    double t_Y = pow(10, -7), t_full = pow(10, -10);
     T_center = T_vect[N_center];
     ida_steps = 2000;
     Write_to_file("detail/initial", fout, x_vect,

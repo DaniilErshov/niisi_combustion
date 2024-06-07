@@ -11,12 +11,13 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     vector<double>& u_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend)
 {
     double h = l / (Nx - 1);
-    double x_start = 0.3 * l;
-    double x_finish = (1 - 0.3) * l;
+    double x_start = 0.2 * l;
+    double x_finish = (1 - 0.7) * l;
 
     double j = 0;
     //std::cout << "M = " << M << "\n";
-
+    double T_left = 400;
+    double Tright = 1400;
     for (int i = 0; i < Nx; i++) {
         x_vect[i] = h * i;
     }
@@ -25,12 +26,15 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
 
         if (x_vect[i] <= x_start)
         {
-            T_vect[i] = Tstart;
+            T_vect[i] = T_left;
         }
-        else {
+        if (x_vect[i] >= x_start && x_vect[i] <= x_finish) {
+            T_vect[i] = (Tright - T_left) / (x_finish - x_start) * (x_vect[i] - x_start) + Tstart;
+        }
+        if (x_vect[i] >= x_finish) {
             //T_vect[i] = (Tfinish - Tstart) / (x_finish - x_start) * (x_vect[i] - x_start) + Tstart;
             //T_vect[i] = Tfinish;
-            T_vect[i] = Tstart;
+            T_vect[i] = Tright;
         }
         u_vect[i] = 0;
     }
@@ -50,13 +54,18 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
     Xi[komponents["N2"]] = koeff_N2 / (koeff_O2 + koeff_N2);
     moleFraction_to_massFraction(Xi, Yi);
 
-    Ystart[komponents["O2"]] = 0;
-    Ystart[komponents["N2"]] = 0;
-    Ystart[komponents["H2"]] = 1;
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        Ystart[k_spec] = pow(10, -19);
+        Yend[k_spec] = pow(10, -19);
+    }
+    Ystart[komponents["H2"]] = 1 - pow(10, -15);
+    Ystart[komponents["O2"]] = (1. - Ystart[komponents["H2"]]) / 2.;
+    Ystart[komponents["N2"]] = (1. - Ystart[komponents["H2"]]) / 2. ;
+
     Yend[komponents["O2"]] = Yi[komponents["O2"]];
     Yend[komponents["N2"]] = Yi[komponents["N2"]];
     Yend[komponents["H2"]] = Yi[komponents["H2"]];
-
+    
     for (int i = 0; i < Nx; i++)
     {
         if (x_vect[i] < x_start) {
@@ -72,7 +81,7 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<
                 //Y_vect[komponents["H2"] + i * num_gas_species] = 1;
             }
         }
-        if (x_vect[i] > x_finish) {
+        if (x_vect[i] >= x_finish) {
             for (int k = 0; k < num_gas_species; k++) {
                 Y_vect[k + i * num_gas_species] = Yend[k];
             }
@@ -271,12 +280,14 @@ double F_right(UserData data,
     double conduct_slag = (2. / (xnext - xprev)) / x / x *
         (lambda_right * dTdr_r * pow(x_r, 2)
             - lambda_left * dTdr_l * pow(x_l, 2));
-
+    //double conduct_slag = (2. / (xnext - xprev)) *
+    //    (lambda_right * dTdr_r
+    //        - lambda_left * dTdr_l);
     //slag_diff = get_dCpi(Cpn, T);
     slag_diff = 0;
-    //slag_chem = get_dHiRT(Hn, T);
-    slag_chem = 0;
-    return conduct_slag - Cp * M * dTdx + slag_chem + slag_diff;
+    slag_chem = get_dHiRT(Hn, T);
+    //slag_chem = 0;
+    return conduct_slag - Cp * M * dTdx - slag_chem + slag_diff;
 
 }
 
@@ -304,14 +315,15 @@ double F_rightY(UserData data, int k_spec,
     //cout << "\n\n";
 
     slag_diff = (rhoYkVk_r * pow(x_r, 2) - rhoYkVk_l * pow(x_l, 2)) / (x_r - x_l) / x / x;
-    //slag_chem = my_mol_weight(k_spec) * ydot[k_spec];
-    slag_chem = 0;
+    //slag_diff = (rhoYkVk_r  - rhoYkVk_l) / (x_r - x_l);
+    slag_chem = my_mol_weight(k_spec) * ydot[k_spec];
+    //slag_chem = 0;
     //cout << "slag_chem =  " << slag_chem << "\n";
     //cout << "slag_diff =  " << slag_diff << "\n";
     double M = get_rho(Yi, T) * u;
     double dYdr = (h_left / h / (h + h_left) * Yinext[k_spec] + (h - h_left) / h / h_left * Yi[k_spec] - h / h_left / (h + h_left) * Yiprev[k_spec]);
     //cout << " slag_diff = " << slag_diff << "\n";
-    return -M * (dYdr) + slag_chem - slag_diff;
+    return -M * (dYdr)  + slag_chem - slag_diff;
 }
 
 void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
@@ -319,7 +331,7 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
     double x_start, x_finish, D;
     double rho;
     fout.open(str + ".dat");
-    string title2 = R"(VARIABLES= "x", "T", "rho", "u",)";
+    string title2 = R"(VARIABLES= "x", "T", "rho", "u", "rho/W")";
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
         title2.append(R"(, "Y_)" + komponents_str[k_spec] + R"(")");
     }
@@ -330,9 +342,9 @@ void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
             Yi[k_spec] = Y_vect[k_spec + i * num_gas_species];
         }
         rho = get_rho(Yi, T_vect[i]);
-
+        double W = get_W(Yi);
         if (number == 1) {
-            fout << x_vect[i] << "  " << T_vect[i]  << " " << rho << " " << u_vect[i];
+            fout << x_vect[i] << "  " << T_vect[i]  << " " << rho << " " << u_vect[i] << " " << rho / W;
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 fout << " " << Y_vect[k_spec + i * num_gas_species];
             }
@@ -560,8 +572,8 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
         }
         else if (i == 1) {
-            T_prev = data->Tl;
             T_curr = yval[i_T];
+            T_prev = T_curr;
             T_next = yval[i_T + (num_gas_species + 2)];
 
             u_curr = yval[i_u];
@@ -610,7 +622,7 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
                 T_prev, T_curr, T_next,
                 x_vect[i - 1], x_vect[i], x_vect[i + 1], 
                 u_prev, u_curr, u_next, i) / rho;
-            //cout << "i_temp initial  = " << i_temp << " Y  = " << ypval[i_temp] << "\n";
+            //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
             i_temp++;
         }
         //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
@@ -618,14 +630,14 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
             T_prev, T_curr, T_next,
             x_vect[i - 1], x_vect[i], x_vect[i + 1], 
             u_prev, u_curr, u_next, i) / rho / Cp;
-        //cout << "i_temp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
+       //cout << "i_temp  T initial = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
         i_temp++;
 
         ypval[i_temp] = F_right_u(data,
             T_prev, T_curr, T_next,
             x_vect[i - 1], x_vect[i], x_vect[i + 1],
             u_prev, u_curr, u_next, i);
-
+       // cout << "i_temp u initial = " << i_temp << " = " << ypval[i_temp] << "\n";
         i_temp++;
     }
 
@@ -691,11 +703,11 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 
     data->N_m = 0;
-    while (iout < 50000) {
+    while (iout < 5000000) {
         retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
         if (check_retval(&retval, "IDASolve", 1)) return(1);
         iout++;
-        tout1 *= 1.0;
+        tout1 *= 1;
         tout += tout1;
 
         i_temp = 0;
@@ -703,7 +715,7 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
         double sum_rho_H2 = 0;
         double sum_rho_O2 = 0;
         double sum_rho_N2 = 0;
-        if (iout % 1000 == 0) {
+        if (iout % 10000 == 0) {
             for (int i = 1; i < N_x - 1; i++) {
                 for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                     Y_vect[i * num_gas_species + k_spec] = yval[i_temp];
@@ -717,6 +729,11 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
                 sum_rho_O2 += rho * Yi[komponents["O2"]] * 4 / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
                 sum_rho_N2 += rho * Yi[komponents["N2"]] * 4 / 3 * Pi * (pow(x_vect[i + 1], 3) - pow(x_vect[i], 3));
 
+                //sum_rho += rho * (pow(x_vect[i + 1], 1) - pow(x_vect[i], 1));
+                //sum_rho_H2 += rho * Yi[komponents["H2"]] *(pow(x_vect[i + 1], 1) - pow(x_vect[i], 1));
+                //sum_rho_O2 += rho * Yi[komponents["O2"]] * (pow(x_vect[i + 1], 1) - pow(x_vect[i], 1));
+                //sum_rho_N2 += rho * Yi[komponents["N2"]] * (pow(x_vect[i + 1], 1) - pow(x_vect[i], 1));
+
                 T_vect[i] = yval[i_temp];
                 i_temp++;
                 u_vect[i] = yval[i_temp];
@@ -729,10 +746,10 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
             T_vect[N_x - 1] = T_vect[N_x - 2];
             cout << "t = " << tout << "\n";
-            cout << "sum_rho = " << sum_rho << "\n";
-            cout << "sum_rho_H2 = " << sum_rho_H2 << "\n";
-            cout << "sum_rho_O2 = " << sum_rho_O2 << "\n";
-            cout << "sum_rho_N2 = " << sum_rho_N2 << "\n";
+            cout << "mass = " << sum_rho << "\n";
+            cout << "mass_H2 = " << sum_rho_H2 << "\n";
+            cout << "mass_O2 = " << sum_rho_O2 << "\n";
+            cout << "mass_N2 = " << sum_rho_N2 << "\n";
             Write_to_file("detail/Ida_" + to_string(iout), fout, x_vect,
                 T_vect, Y_vect, u_vect, M, N_x, 1);
         }

@@ -78,7 +78,8 @@ void init_consts(int& num_gas_species, int& num_react) {
     //const std::string chemfile = R"(D:\Storage\Daniil\n-heptane\heptane.inp)";
     const std::string thermfile = R"(D:\Storage\Daniil\n-heptane\term.dat)";
     const std::string transfile = R"(D:\Storage\Daniil\n-heptane\tran.dat)";
-    const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem_test.inp)";
+    //const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem_test.inp)";
+    const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem2.inp)";
     //const std::string thermfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\therm-abf.dat)";
     //const std::string transfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\tran.dat)";
 
