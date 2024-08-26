@@ -26,6 +26,10 @@ extern double* mol_weight;
 extern double* Yi;
 extern double* Yiprev;
 extern double* Yinext;
+extern double* Y_inter;
+extern double* Y_inter_2r;
+extern double* Y_inter_3r;
+
 
 extern double* YkVk_r;
 extern double* YkVk_l;
@@ -75,14 +79,12 @@ void init_consts(int& num_gas_species, int& num_react) {
     std::string visc_str = "VISCOSITIES";
     std::string diff_str = "DIFFUSION";
 
-    //const std::string chemfile = R"(D:\Storage\Daniil\n-heptane\heptane.inp)";
+    const std::string chemfile = R"(D:\Storage\Daniil\n-heptane\heptane.inp)";
     const std::string thermfile = R"(D:\Storage\Daniil\n-heptane\term.dat)";
     const std::string transfile = R"(D:\Storage\Daniil\n-heptane\tran.dat)";
     //const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem_test.inp)";
-    const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem2.inp)";
-    //const std::string thermfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\therm-abf.dat)";
-    //const std::string transfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\tran.dat)";
-
+    //const std::string chemfile = R"(D:\Storage\Daniil\gorenie\ChemKin_reader\test\chem2.inp)";
+    chec.chemkinReader = new IO::ChemkinReader(chemfile, thermfile, transfile);
     chec.chemkinReader = new IO::ChemkinReader(chemfile, thermfile, transfile);
 
 
@@ -332,15 +334,17 @@ void findValue(const std::vector<T>& data, bool(*condition)(T))
 void allocate_memory() {
     Ystart = new double[num_gas_species];
     Yend = new double[num_gas_species];
+
+    Xi_2 = new double[num_gas_species];
+    Xi_3 = new double[num_gas_species];
+    X_inter = new double[num_gas_species];
+    Y_inter_2r = new double[num_gas_species];
+    Y_inter_3r = new double[num_gas_species];
     X = new double[num_gas_species];
     for (int i = 0; i < num_gas_species; i++) {
         Ystart[i] = 0;
         Yend[i] = 0;
     };
-
-    Yi = new double[num_gas_species];
-    Yiprev = new double[num_gas_species];
-    Yinext = new double[num_gas_species];
     YkVk_r = new double[num_gas_species];
     YkVk_l = new double[num_gas_species];
 
@@ -403,9 +407,6 @@ void free_memory() {
     delete[] Yend;
     delete[] X;
 
-    delete[] Yi;
-    delete[] Yiprev;
-    delete[] Yinext;
     delete[] YkVk_r;
     delete[] YkVk_l;
 

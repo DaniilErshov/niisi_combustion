@@ -36,7 +36,7 @@ void moleFraction_to_massFraction(double* X, double* Y)
 void Get_molar_cons(double* X, double* Y, double T)
 {
     double W = 0;
-    double rho = get_rho(Y, T);
+    double rho = get_rho(Y, T, 'g');
     for (int i = 0; i < num_gas_species; i++) {
         X[i] = Y[i] * rho / my_mol_weight(i);
     }
@@ -57,12 +57,16 @@ double get_W(double* Y)
     return 1. / W;
 }
 
-double get_rho(double* Y, double T) {
-    return P * get_W(Y) / R / T;
+double get_rho(double* Y, double T, char phase) {
+    if (phase == 'g') {
+        return P * get_W(Y) / R / T;
+    }
+    else
+        return get_rho_d(340);
 }
 
 double get_GradRho(double* Yi, double* Yinext, double x, double xnext, double Ti, double Tinext) {
-    return (get_rho(Yinext, Tinext) - get_rho(Yi, Ti)) / (xnext - x);
+    return (get_rho(Yinext, Tinext, 'g') - get_rho(Yi, Ti, 'g')) / (xnext - x);
 }
 
 void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext) {
@@ -70,7 +74,23 @@ void get_grad(double* gradX, double* Xi, double* Xinext, double x, double xnext)
         gradX[i] = (Xinext[i] - Xi[i]) / (xnext - x);
     }
 }
+void get_grad_interpolate(double* gradX, double* Xi, double* Xi_2, double* Xi_3, double h ,double p) {
 
+    double koeff_i = (2 * p - 7) / ((p - 3) * (p - 4) * h);
+    double koeff_2 = (p - 4) / ((p - 3) * h);
+    double koeff_3 = (p - 3) / ((4 - p) * h);
+    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+        gradX[k_spec] = koeff_i * Xi[k_spec] + koeff_2 * Xi_2[k_spec] + koeff_3 * Xi_3[k_spec];
+        //gradX[k_spec] = (Xi_2[k_spec] - Xi[k_spec]) / (3 - p) / h;
+        int jop = 0;
+    }
+}
+
+//void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime, int num_cell) {
+//    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
+//        yprime[k_spec] = 0;
+//    }
+//}
 void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* equilib, double Tcurr, double* y, double* yprime, int num_cell) {
 
     double d = 0.14;
@@ -298,7 +318,7 @@ void chem_vel(double* Sn, double* Hn, double* forward, double* reverse, double* 
 double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* Y_average) {
     double sum = 0.;
     double W = get_W(Y_average);
-    double rho = get_rho(Y_average, T);
+    double rho = get_rho(Y_average, T, 'g');
     double YkVk = 0;
     double Dkm = 0;
     double Dij = 0;
@@ -311,6 +331,7 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* 
                 / Dij_res[k][j];
         }
     }
+
     if (sum != 0) {
         Dkm = (1. - Y_average[k]) / sum;
     }
@@ -323,7 +344,7 @@ double YkVk_func(int k, double T, double* Y, double* gradX, double* Xi, double* 
 }
 
 
-double Dij_func5(int i, int j, double T, int number_cell)
+double Dij_func5(int i, int j, double T)
 {
     //double res;
     //double logt = log(T);

@@ -13,10 +13,11 @@
 #include "chemkinReader.h"
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
+
 using namespace std;
 
-#include <ida/ida.h>   
-#include <kinsol/kinsol.h>             /* access to KINSOL func., consts. */
+#include <ida/ida.h>  
+#include <kinsol/kinsol.h>  
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector       */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix       */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
@@ -45,17 +46,23 @@ using namespace std;
 #define PI     RCONST(3.1415926)
 
 /* Problem Constants */
+extern double p_inter;
 extern int num_gas_species;
 extern int num_react;
 extern double k_mol;
 extern double Y_N2;
 extern double Y_max;
 extern double P;
+extern double* Ystart;
 extern double R;
 extern double x_center;
 extern double koeff_l;
 extern double l;
 extern double* norm;
+extern double* Xi_2;
+extern double* Xi_3;
+extern double* X_inter;
+extern string Fuel;
 extern long int myiter;
 extern long int nniters;
 extern double eps_x ;
@@ -65,6 +72,7 @@ extern double Tstart ;
 extern double Tfinish ;
 extern double nevyaz_Y;
 extern double nevyaz_T;
+extern double vel_prev;
 extern const double kB ;
 extern const double Angstroem__ ;
 extern const double santimetr ;
@@ -74,12 +82,24 @@ extern double stoler;
 extern double* Yi;
 extern double* Yiprev;
 extern double* Yinext;
+extern int Nx;
 
 extern double* YkVk_r;
 extern double* YkVk_l;
 
+extern double r_inter;
+extern double u_inter;
+extern double u_inter_2r;
+extern double u_inter_3r;
+extern double* Yend;
+
+extern double* Y_inter;
+extern double* Y_inter_2r;
+extern double* Y_inter_3r;
+
 extern double* gradX_r;
 extern double* gradX_l;
+extern double corrector;
 
 extern double* X_tmp_r;
 extern double* X_tmp_l;
@@ -100,7 +120,8 @@ extern double* YkVk;
 extern double* Sn;
 extern double* Hn;
 extern double* Cpn;
-
+extern int add_variable_count;
+extern int count_var_in_cell;
 extern double* forward_arr;
 extern double* reverse_arr;
 extern double* equilib_arr;
@@ -111,6 +132,7 @@ extern double*** diff_polynom;
 extern double** lambda_polynom;
 extern double* mol_weight;
 extern int jactimes;
+
 extern vector<vector<double>> Cp_arr;
 extern vector<vector<double>> H_arr;
 extern vector<vector<double>> Lambda_arr;
@@ -124,6 +146,7 @@ extern vector<vector<double>> reverse_arr_save;
 
 extern int ida_steps;
 extern double eps;
+extern int preinter;
 extern vector<string> name_species;
 extern std::unordered_map<std::string, int> komponents;
 extern std::unordered_map<int, string> komponents_str;
@@ -133,9 +156,33 @@ extern std::map<int, string> mykomponents_str;
 extern vector<double> x_vect;
 extern vector<double> Y_vect;
 extern vector<double> T_vect;
+extern vector<double> rho_vect;
+extern vector<double> vel_vect;
+extern vector<double> drhodt_vect;
+extern vector<double>  VkN2_vect;
+extern vector<double>  VkH2O_vect;
+extern vector<double>  dTdt_vect;
+extern vector<double>  dWdt_vect;
 extern bool flag_use_save_koeffs;
 extern bool save_chem_koeffs;
 extern bool update_koeffs;
+
+typedef struct Cell_Properties {
+    vector <double> Y;
+    double T;
+    double u;
+    double vel;
+    double rho;
+};
+
+
+extern Cell_Properties Cell_Properties_inter;
+extern Cell_Properties Cell_prouds_inter;
+extern Cell_Properties Cell_rval_inter;
+
+extern vector<Cell_Properties> Cell_Properties_vector;
+extern vector<Cell_Properties> Cell_prouds_vector;
+extern vector<Cell_Properties> Cell_rval_vector;
 
 typedef struct {
     double Vc_r, Vc_l, rho_r, rho_l;
@@ -146,6 +193,8 @@ typedef struct {
     int N_centr;
     int my_numjac;
     double my_tcur;
+    double t;
+    double p;
     void* sun_mem;
     realtype Tl;
     realtype M;
@@ -165,21 +214,43 @@ void updateKoeffs(double* yval, UserData data);
 
 static int check_retval(void* retvalvalue, const char* funcname, int opt);
 
-double F_right(UserData data,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, 
+double F_right_T_g(UserData data,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext,
     double uprev, double u, double unext, int number_cell);
+
+void Make_Xvector(UserData data, double* Y, double* X_mol, int myNx, int i);
+
+double Ys(double T, double Y);
+
+double F_right_T_d(UserData data,
+    double Tprev, double T, double Tnext, double xprev, double x, double xnext,
+    double uprev, double u, double unext, int number_cell);
+
+double F_right_u_inter_r(UserData data,
+    double Tprev, double T, double Tnext,
+    double u_inter, double u, double u_inter_2r, double u_inter_3r, double h, double p);
 
 double F_rightY(UserData data, int k_spec,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, 
     double uprev, double u, double unext, int number_cell);
 
+double F_rightY_interface(UserData data, int k_spec, double Vc,
+    double T_inter, double xprev, double x, double u, double us, double p, int number_cell);
 
-int InitialData(int& Nx, vector<double>& x_vect, vector<double>& T_vect, vector<double>& Y_vect, 
-    vector<double>& u_vect, double& M, double Tstart, double Tfinish, double* Ystart, double* Yend);
+double  F_right_u_inter(UserData data, double Vc, int k_spec,
+    double T_inter, double xprev, double x, double u, double us, double p, int number_cell);
 
-void Write_to_file(string str, ofstream& fout, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, vector<double>& Yp_vect, double M, int N_x, int number);
+double F_right_T_interfase_r(double* my_X_inter, double T_inter,
+    double T_inter_r, double T_inter_2r, double T_inter_3r, double u, double ri_l, double ri, double ri_r, double h, double p);
+double F_right_T_interfase(double* my_X_tmp, double T_inter_3l, double T_inter_2l,
+    double T_inter, double T_inter_2r, double T_inter_3r, double us, double ri, double h, double p);
 
+int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_Properties_vector, double Tstart
+    , double Tfinish, double* Ystart, double* Yend);
+
+void Write_to_file(string str, string type_str, vector<Cell_Properties>& my_Cell_Properties_vector,
+    Cell_Properties& my_Cell_Properties_inter);
+void Write_drhodt(string str);
 int integrate_Y_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, double t_fix);
 
@@ -205,14 +276,6 @@ static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void
 int integrate_Y_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
-int Integrate_Kinsol(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
-
-static int func_kinsol(N_Vector u, N_Vector f, void* user_data);
-
-void MakeYvectors(UserData data,
-    double* Y, int myNx, int i, double Tl);
-
 int Find_final_state_IDA(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
 static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
@@ -227,18 +290,10 @@ void MakeYvectorsY(UserData data,
 double get_M(double Tprev, double T, double Tnext,
     double xprev, double x, double xnext, int number_cell);
 
-
-int Integrate_Kinsol_dense(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
-
-static int func_kinsol_dense(N_Vector u, N_Vector f, void* user_data);
-
-
 void MakeYvectors_dense(UserData data,
     double* Y, int myNx, int i, double Tl);
 
-void MakeYvectors_kins(UserData data,
-    double* Y, int myNx, int i, double Tl);
+void MakeYvector(double* Y, int myNx);
 
 
 int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
@@ -247,7 +302,7 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-void set_Dij_res(double T, int number_cell, char side);
+void set_Dij_res(double T);
 
 
 int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
@@ -257,17 +312,89 @@ int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
 static int func_All_IDA_dense(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
 
-int Integrate_Kinsol_withoutM(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter);
-
-static int func_kinsol_withoutM(N_Vector u, N_Vector f, void* user_data);
-
 double F_right_IDA(UserData data,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);
 
 
-int Find_final_state_KINSOL(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
-
 static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data);
 
 void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart);
+void get_Yi(UserData data, double* yval, double* my_Yi, int i);
+void MakeYvectors_interface(double* yval);
+
+void set_fuel_rval(UserData data, double T_prev, double T_curr, double T_next,
+    double u_prev, double u_curr, double u_next,
+    double vel_prev, double vel_curr, double vel_next,
+    double rho_prev, double rho_curr, double rho_next,
+    double* rval, double* yval, double* ypval, int& i_temp, int i);
+
+
+void set_interface_l_rval(UserData data, double T_prev, double T_curr, double T_next,
+    double u_prev, double u_curr, double u_next,
+    double vel_prev, double vel_curr, double vel_next,
+    double rho_prev, double rho_curr, double rho_next,
+    double T_inter_3l, double T_inter_2l, double T_inter,
+    double* rval, double* yval, double* ypval, int& i_temp, double vel_inter, double rho_inter, int i);
+
+void set_interface_rval(UserData data, double T_prev, double T_curr, double T_next,
+    double u_prev, double u_curr, double u_next,
+    double vel_prev, double vel_curr, double vel_next,
+    double rho_prev, double rho_curr, double rho_next,
+    double T_inter_3l, double T_inter_2l, double T_inter, double T_inter_2r, double T_inter_3r,
+    double* rval, double* yval, double* ypval, int& i_temp, double vel_inter, double p, double rho_inter, double u_inter, int i);
+
+
+
+void set_interface_r_rval(UserData data, double T_prev, double T_curr, double T_next,
+    double u_prev, double u_curr, double u_next,
+    double vel_prev, double vel_curr, double vel_next,
+    double rho_prev, double rho_curr, double rho_next,
+    double T_inter_3l, double T_inter_2l, double T_inter, double T_inter_2r, double T_inter_3r,
+    double rho_inter, double rho_inter_2r, double rho_inter_3r,
+    double* rval, double* yval, double* ypval, int& i_temp, double vel_inter, int i);
+
+
+void set_rval_gas(UserData data, double T_prev, double T_curr, double T_next,
+    double u_prev, double u_curr, double u_next,
+    double vel_prev, double vel_curr, double vel_next,
+    double rho_prev, double rho_curr, double rho_next,
+    double* rval, double* yval, double* ypval, int& i_temp, double vel_inter, int i);
+
+void set_p(double tres, double dt, double step, double V, double h);
+
+double get_vel(double* my_X_tmp, double T_inter_3l, double T_inter_2l,
+    double T_inter, double T_inter_2r, double T_inter_3r, double h, double p);
+double inital_u(UserData data, double Vc, double T_inter,
+    double u, double us, int number_cell);
+
+double F_right_rho(UserData data,
+    double rho_l, double rho, double rho_r, double r_l, double r, double r_r,
+    double u_l, double u, double u_r,
+    int number_cell);
+
+double F_right_rho_inter_r(UserData data,
+    double rho_inter, double rho, double rho_inter_2r, double rho_inter_3r,
+    double u_inter, double u, double u_inter_2r, double u_inter_3r, double r_l, double r, double r_r, double p);
+
+double F_right_rho_interface(double rhog, double vel, double u_inter, double T_inter);
+
+
+int KinSetIc(int NEQ);
+
+static int func_kinsol(N_Vector u, N_Vector f, void* user_data);
+double get_Qg(double Tval, double Tvalr, double TvalrP, double* Yval, double h, double p);
+double get_Qd(double TvallM, double Tvall, double Tval, double* Yval, double h, double p);
+
+void MakeYvector(vector<Cell_Properties>& my_Cell_Properties_vector,
+    Cell_Properties& my_Cell_Properties_inter, double* Y, int myNx);
+
+void MakePropertiesvectors(vector<Cell_Properties>& my_Cell_Properties_vector,
+    Cell_Properties& my_Cell_Properties_inter,
+    double* Y, int myNx);
+
+double get_dotM(double Ys, double Tval, double ri, double rhog, double Dfm);
+int IdaIC(int NEQ);
+static int funcT_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
+
+static int func_kinsol_T(N_Vector u, N_Vector f, void* user_data);
+int KinSet_T_inter(int NEQ);

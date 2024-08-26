@@ -284,7 +284,7 @@ void GasTransport::fitProperties(MMCollisionInt& integrals)
             //vector<double> cp_R_all(m_thermo->nSpecies());
             //m_thermo->getCp_R_ref(&cp_R_all[0]);
             //double cp_R = cp_R_all[k];
-            double cp_R = get_Cpi(k, t, 0);
+            double cp_R = get_Cpi(k, t);
             //std::cout << "Cp_R = " << cp_R << "\n";
             tstar = Boltzmann * t / m_eps[k];
             double sqrt_T = sqrt(t);
