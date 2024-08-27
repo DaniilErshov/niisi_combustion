@@ -201,6 +201,7 @@ double Pf(double T) {
     //double jop = pow(2 * C / (-B + pow(B * B - 4 * A * C, 0.5)), 4);
     double res = 24523.160692131387 + 922.0983808780411 * T + -21.500586403548954 * pow(T, 2) + 0.1552381071666568 * pow(T, 3) + -0.0004781197006891655 * pow(T, 4) + 5.439451804534201e-07 * pow(T, 5);
     res /= 1.e6;
+    res = tanh(1.e8 * t_curr) * res;
     return res;
 }
 double L_d(double T) {

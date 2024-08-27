@@ -74,6 +74,7 @@ extern double nevyaz_Y;
 extern double nevyaz_T;
 extern double vel_prev;
 extern const double kB ;
+extern double t_curr;
 extern const double Angstroem__ ;
 extern const double santimetr ;
 extern double** Dij_res;

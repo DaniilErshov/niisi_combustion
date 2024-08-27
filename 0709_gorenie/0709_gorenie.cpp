@@ -12,8 +12,8 @@ long int myiter = 0;
 long int nniters;
 double eps_func = pow(10, -8);
 double* norm;
-double Tstart = 280;
-double Tfinish = 1000;
+double Tstart = 293;
+double Tfinish = 1200;
 double nevyaz_Y;
 double nevyaz_T;
 double eps_x = pow(10, -6);
@@ -25,8 +25,10 @@ int Nx = 150 + preinter;
 const double kB = 1.3806504e-23;
 const double Angstroem__ = 1.0e-10;
 const double santimetr = 1.0e-8;
+const double step_t = 1.e-6;
 double p_inter = 1.0012;
 double vel_prev;
+double t_curr = 0;
 string Fuel = "NC7H16";
 
 double* Xi_2;
@@ -288,13 +290,16 @@ int main()
 
     double t_Y = pow(10, -7), t_full = pow(10, -10);
     vel_interf = 0;
-
+    int delta = 40;
+    int step_pol = 1;
     KinSetIc(3 + num_gas_species + (Nx - preinter - 2));
     for (int i = 0; i < Nx; i++)
     {
-        if (i <= preinter + 4) {
+        /*if (i <= preinter + 0) {*/
+        if (i <= preinter) {
             for (int k = 0; k < num_gas_species; k++) {
                 Cell_Properties_vector[i].Y[k] = Cell_Properties_inter.Y[k];
+                //Y_vect[k + i * num_gas_species] = Ystart[k] + (Yend[k] - Ystart[k]) / (x_finish - x_start) * (x_vect[i] - x_start);
             }
         }
         else {
@@ -302,7 +307,6 @@ int main()
                 Cell_Properties_vector[i].Y[k] = Yend[k];
             }
         }
-        Cell_Properties_vector[i].rho = get_rho(Cell_Properties_vector[i].Y.data(), Cell_Properties_vector[i].T, 'g');
     }
     KinSetIc(3 + num_gas_species + (Nx - preinter - 2));
     vel_prev = 10;

@@ -4,6 +4,8 @@
 #include "boost/regex.hpp"
 #include "boost/format.hpp"
 
+extern double t_curr;
+
 double Lambda_All(double* X, double T, char phase);
 
 double get_dHiRT(double* Cp_coef, double T);
