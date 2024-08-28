@@ -55,31 +55,22 @@ extern double Y_max;
 extern double P;
 extern double* Ystart;
 extern double R;
-extern double x_center;
-extern double koeff_l;
-extern double l;
-extern double* norm;
+
 extern double* Xi_2;
 extern double* Xi_3;
 extern double* X_inter;
 extern string Fuel;
-extern long int myiter;
-extern long int nniters;
-extern double eps_x ;
-extern double eps_func;
-extern double eps_fr ;
+
+
 extern double Tstart ;
 extern double Tfinish ;
-extern double nevyaz_Y;
-extern double nevyaz_T;
 extern double vel_prev;
 extern const double kB ;
 extern double t_curr;
 extern const double Angstroem__ ;
 extern const double santimetr ;
 extern double** Dij_res;
-extern double ftol;
-extern double stoler;
+
 extern double* Yi;
 extern double* Yiprev;
 extern double* Yinext;
@@ -121,6 +112,7 @@ extern double* YkVk;
 extern double* Sn;
 extern double* Hn;
 extern double* Cpn;
+
 extern int add_variable_count;
 extern int count_var_in_cell;
 extern double* forward_arr;
@@ -132,18 +124,6 @@ extern double* ydot;
 extern double*** diff_polynom;
 extern double** lambda_polynom;
 extern double* mol_weight;
-extern int jactimes;
-
-extern vector<vector<double>> Cp_arr;
-extern vector<vector<double>> H_arr;
-extern vector<vector<double>> Lambda_arr;
-extern vector<vector<double>> Lambda_arr_r;
-extern vector<vector<double>> Lambda_arr_l;
-extern vector<vector<vector<double>>> Dij_arr;
-extern vector<vector<vector<double>>> Dij_arr_r;
-extern vector<vector<vector<double>>> Dij_arr_l;
-extern vector<vector<double>> forward_arr_save;
-extern vector<vector<double>> reverse_arr_save;
 
 extern int ida_steps;
 extern double eps;
@@ -151,22 +131,11 @@ extern int preinter;
 extern vector<string> name_species;
 extern std::unordered_map<std::string, int> komponents;
 extern std::unordered_map<int, string> komponents_str;
-extern std::unordered_map<int, std::unordered_map<string, double>> Dij_saved;
-extern std::map<std::string, int> mykomponents;
-extern std::map<int, string> mykomponents_str;
+
 extern vector<double> x_vect;
-extern vector<double> Y_vect;
-extern vector<double> T_vect;
-extern vector<double> rho_vect;
-extern vector<double> vel_vect;
 extern vector<double> drhodt_vect;
-extern vector<double>  VkN2_vect;
-extern vector<double>  VkH2O_vect;
 extern vector<double>  dTdt_vect;
 extern vector<double>  dWdt_vect;
-extern bool flag_use_save_koeffs;
-extern bool save_chem_koeffs;
-extern bool update_koeffs;
 
 typedef struct Cell_Properties {
     vector <double> Y;
@@ -221,8 +190,6 @@ double F_right_T_g(UserData data,
 
 void Make_Xvector(UserData data, double* Y, double* X_mol, int myNx, int i);
 
-double Ys(double T, double Y);
-
 double F_right_T_d(UserData data,
     double Tprev, double T, double Tnext, double xprev, double x, double xnext,
     double uprev, double u, double unext, int number_cell);
@@ -246,78 +213,42 @@ double F_right_T_interfase_r(double* my_X_inter, double T_inter,
 double F_right_T_interfase(double* my_X_tmp, double T_inter_3l, double T_inter_2l,
     double T_inter, double T_inter_2r, double T_inter_3r, double us, double ri, double h, double p);
 
-int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_Properties_vector, double Tstart
+void InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_Properties_vector, double Tstart
     , double Tfinish, double* Ystart, double* Yend);
 
 void Write_to_file(string str, string type_str, vector<Cell_Properties>& my_Cell_Properties_vector,
     Cell_Properties& my_Cell_Properties_inter);
 void Write_drhodt(string str);
-int integrate_Y_IDA(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, double t_fix);
-
-static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
 int integrate_All_IDA(int N_x, vector<double>& x_vect,
     vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
 
 static int func_All_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-double get_M(double* Yiprev, double* Yi, double* Yinext,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, double* Xiprev, double* Xi, double* Xinext, double* gradX, double* Y_tmp, double* X_tmp,
-    double M, double* ydot, double* wk_add);
-
 void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double& T_center);
 
-void Init_Data(UserData data, int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, int NEQ,
-    int N_center, double* Y_leftb);
+void Init_Data(UserData data, int N_x, int NEQ);
 
-static int func_Y_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
-
-int integrate_Y_IDA(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb);
 
 int Find_final_state_IDA(double& Tinitial, double& Tend, double* Y_vect, double* Y_end);
 static int func_final_state(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
-void makeYstart(double koeff_topl, double* Ystart);
 
 void find_diff_slag(UserData data, double Tcurr, double Tnext, double* Yi, double* Yinext,
     double* Xi, double* Xinext, double* Ykvk_side, double* Y_tmp_side, double* X_tmp_side, double* gradX_side, double& rho_side, double& Vc_side, int i, char side);
 
-void MakeYvectorsY(UserData data,
-    double* Y, int myNx, int i, double Tl);
 
 double get_M(double Tprev, double T, double Tnext,
     double xprev, double x, double xnext, int number_cell);
 
-void MakeYvectors_dense(UserData data,
-    double* Y, int myNx, int i, double Tl);
-
-void MakeYvector(double* Y, int myNx);
 
 
-int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, vector<double>& u_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
+int integrate_All_IDA_M(int N_x);
 
 
 static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
 
 void set_Dij_res(double T);
-
-
-int integrate_All_IDA_dense(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect, double& M, int N_center, double* Y_leftb, int iter, double t_fix);
-
-
-static int func_All_IDA_dense(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
-
-
-double F_right_IDA(UserData data,
-    double Tprev, double T, double Tnext, double xprev, double x, double xnext, int i);
-
-
-static int func_final_state_kinsol(N_Vector u, N_Vector f, void* user_data);
 
 void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart);
 void get_Yi(UserData data, double* yval, double* my_Yi, int i);
@@ -394,8 +325,3 @@ void MakePropertiesvectors(vector<Cell_Properties>& my_Cell_Properties_vector,
     double* Y, int myNx);
 
 double get_dotM(double Ys, double Tval, double ri, double rhog, double Dfm);
-int IdaIC(int NEQ);
-static int funcT_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data);
-
-static int func_kinsol_T(N_Vector u, N_Vector f, void* user_data);
-int KinSet_T_inter(int NEQ);

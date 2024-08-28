@@ -1,0 +1,2 @@
+TITLE="Graphics"
+VARIABLES= "koeff_fuel", "v", "Tend", "norm"

@@ -10,22 +10,18 @@ double corector = 0.1;
 #define TMULT RCONST(1.006)     /* output time factor     */
 #define NOUT  1800
 #define ZERO  RCONST(0.0)
-
 int vizov = 0;
 
 
-int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_Properties_vector, double Tstart, double Tfinish, double* Ystart, double* Yend)
+void InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_Properties_vector, double Tstart, double Tfinish, double* Ystart, double* Yend)
 {
-    double h = l / (Nx - 1);
-    double x_start = 0.2 * l;
-    double x_finish = (1 - 0.7) * l;
+    double h;
     double j = 0;
-    //std::cout << "M = " << M << "\n";
     double T_left = Tstart;
     double Tright = Tfinish;
     double ri = 0.0025;
     double h_dot = ri / preinter;
-    double q = 1.04;
+    double q = 1.06;
 
     int delta = 40;
     double step_pol = 1;
@@ -44,21 +40,9 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_P
         {
             Cell_Properties_vector[i].T = T_left;
         }
-        //else if (i <= preinter + delta) {
-
-        //    double C = T_left;
-        //    double B = Tright - C;
-        //    double a = 500;
-        //    double delta_x = 1. / a / 2. * log(220);
-        //    //Cell_Properties_vector[i].T = 0.5 * (B * tanh((x_vect[i] - ri - delta_x) * a) + B) + C;
-        //    Cell_Properties_vector[i].T = (Tright - T_left) / pow((x_vect[preinter + delta] - x_vect[preinter + 4]), step_pol)
-        //        * pow((x_vect[i] - x_vect[preinter + 4]), step_pol) + T_left;
-
-
-        //}
+       
         else {
-            //T_vect[i] = (Tfinish - Tstart) / (x_finish - x_start) * (x_vect[i] - x_start) + Tstart;
-            //T_vect[i] = Tfinish;
+          
             Cell_Properties_vector[i].T = Tright;
         }
         Cell_Properties_vector[i].u = 0;
@@ -90,7 +74,6 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_P
     Yend[komponents["O2"]] = Y_tmp[komponents["O2"]];
     Yend[komponents[Fuel]] = pow(10, -15);
 
-    //Cell_Properties_inter.T = (T_vect[preinter] + T_vect[preinter + 1]) / 2.;
     Cell_Properties_inter.T = T_left;
     double Pf_ = Pf(Cell_Properties_inter.T);
     double mol_w = my_mol_weight(komponents[Fuel]);
@@ -108,25 +91,12 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_P
     Cell_Properties_inter.rho = get_rho(Cell_Properties_inter.Y.data(), Cell_Properties_inter.T, 'g');
         for (int i = 0; i < Nx; i++)
         {
-            /*if (i <= preinter + 0) {*/
             if (i <= preinter) {
                 for (int k = 0; k < num_gas_species; k++) {
                     Cell_Properties_vector[i].Y[k] = Cell_Properties_inter.Y[k];
-                    //Y_vect[k + i * num_gas_species] = Ystart[k] + (Yend[k] - Ystart[k]) / (x_finish - x_start) * (x_vect[i] - x_start);
                 }
             }
-            //else if (i <= preinter + delta) {
-            //    for (int k = 0; k < num_gas_species; k++) {
-
-            //        double C = Cell_Properties_inter.Y[k];
-            //        double B = Yend[k] - C;
-            //        double a = 500;
-            //        double delta_x = 1. / a / 2. * log(220);
-            //        //Cell_Properties_vector[i].Y[k] =  0.5 * (B * tanh((x_vect[i] - ri - delta_x) * a) + B) + C;
-            //        Cell_Properties_vector[i].Y[k] = (Yend[k] - Cell_Properties_inter.Y[k]) / pow((x_vect[preinter + delta] - x_vect[preinter + 4]), step_pol)
-            //            * pow((x_vect[i] - x_vect[preinter + 4]), step_pol) + Cell_Properties_inter.Y[k];
-            //    }
-            //}
+           
             else {
                 for (int k = 0; k < num_gas_species; k++) {
                     Cell_Properties_vector[i].Y[k] = Yend[k];
@@ -139,7 +109,6 @@ int InitialData(int& Nx, vector<double>& x_vect, vector<Cell_Properties>& Cell_P
         Cell_Properties_vector[i].rho = get_rho(Cell_Properties_vector[i].Y.data(), Cell_Properties_vector[i].T, 'g');
         Cell_Properties_vector[i].vel = Cell_Properties_inter.vel;
     }
-    return 0;
 }
     
 void Write_drhodt(string str) {
@@ -154,95 +123,6 @@ void Write_drhodt(string str) {
     fout.close();
 }
 
-void Add_elem_simple(vector<double>& T, vector<double>& Y, vector<double>& x, int& N_x, int& N_center, double b, int number, int number_start, double& T_center)
-{
-    double T_max = 0, T_min = T[0];
-    int Nx_add = 0;
-    int j_t = 1;
-    vector<double> Ymax;
-    vector<double> Ymin;
-    Ymax.resize(num_gas_species);
-    Ymin.resize(num_gas_species);
-    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-        Ymax[k_spec] = 0;
-        Ymin[k_spec] = 1.0;
-    }
-    for (int i = 0; i < N_x; i++)
-    {
-        if (T[i] > T_max) T_max = T[i];
-        if (T[i] < T_min) T_min = T[i];
-        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            if (Y[k_spec + num_gas_species * i] > Ymax[k_spec]) Ymax[k_spec] = Y[k_spec + num_gas_species * i];
-            if (Y[k_spec + num_gas_species * i] < Ymin[k_spec]) Ymin[k_spec] = Y[k_spec + num_gas_species * i];
-        }
-    }
-    bool need_add_cell = 0;
-    while (j_t < N_x - 2)
-    {
-        need_add_cell = 0;
-        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            if (fabs(Y[k_spec + num_gas_species * j_t] - Y[k_spec + num_gas_species * (j_t - 1)]) > b * (Ymax[k_spec] - Ymin[k_spec]))
-            {
-                need_add_cell = 1;
-            }
-        }
-        if (fabs(T[j_t] - T[j_t - 1]) > b * (T_max - T_min))
-        {
-            need_add_cell = 1;
-        }
-        if (need_add_cell) {
-            T.insert(T.begin() + j_t, (T[j_t] + T[j_t - 1]) / 2.);
-            for (int k = 0; k < num_gas_species; k++) {
-                Y.insert(Y.begin() + k + num_gas_species * j_t, (Y[k + num_gas_species * j_t + k] + Y[k + num_gas_species * (j_t - 1)]) / 2.);
-            }
-            x.insert(x.begin() + j_t, (x[j_t] + x[j_t - 1]) / 2.);
-            N_x++;
-            j_t++;
-        }
-        j_t++;
-
-        //cout << "j_t = " << j_t << "\n";
-    }
-    for (int k = 0; k < number; k++) {
-        T.push_back(T[N_x - 1]);
-        x.push_back(x[N_x - 1] + 1.5 * (x[N_x - 1] - x[N_x - 2]));
-        for (int i = 0; i < num_gas_species; i++) {
-            Yi[i] = Y[Y.size() - num_gas_species + i];
-        }
-        for (int i = 0; i < num_gas_species; i++) {
-            Y.push_back(Yi[i]);
-        }
-        N_x++;
-    }
-
-    for (int k = 0; k < number_start; k++) {
-        for (int i = 0; i < num_gas_species; i++) {
-            Yi[i] = Y[i];
-        }
-        for (int i = num_gas_species - 1; i >= 0; i--) {
-            Y.insert(Y.begin(), Yi[i]);
-        }
-        T.insert(T.begin(), T[0]);
-        x.insert(x.begin(), x[0] - 1.5 * (x[1] - x[0]));
-
-    }
-    N_x = x.size();
-    resize_koeff_vectors(N_x);
-    //T_center = (Tstart + Tfinish) / 2.;
-    T_min = 1000;
-    for (int i = 0; i < T.size(); i++) {
-        if (abs(T[i] - T_center) < T_min) {
-            N_center = i;
-            T_min = abs(T_vect[i] - T_center);
-        }
-    }
-    T_center = T[N_center];
-    cout << "Tcenter = " << T[N_center] << "\n";
-    cout << "Ncenter = " << N_center << "\n";
-    for (int i = 0; i < Y.size(); i++) {
-        if (Y[i] < 0) Y[i] = 0;
-    }
-}
 double get_mass_of_system(double ri) {
     double Mass = 0;
     Mass = 4/3 * PI * (pow(x_vect[preinter + 1], 3) - pow(ri, 3)) * 0.5 * (Cell_Properties_inter.rho + Cell_Properties_vector[preinter + 1].rho) 
@@ -617,22 +497,12 @@ void Write_to_file(string str, string type_str, vector<Cell_Properties>& my_Cell
 }
 
 
-void Init_Data(UserData data, int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, int NEQ, int NEQ_Y,
-    int N_center, double* Y_leftb) {
+void Init_Data(UserData data, int N_x, int NEQ) {
     data->Nx = N_x;
-
     data->NEQ = NEQ;
-    data->NEQ_Y = NEQ_Y;
-    data->Tl = T_vect[0];
-    data->T_center = T_vect[N_center];
-    std::cout << "T_center = " << data->T_center << "\n";
-    data->N_centr = N_center;
-    data->N_m = 1 - 1;
 
     for (int i = 0; i < num_gas_species; i++) {
         ydot[i] = 0;
-        Y_left_bound[i] = Y_leftb[i];
     }
 }
 
@@ -799,9 +669,7 @@ void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, doub
     cout << fuel << " = " << Ystart[komponents[fuel]] << "\n";
 }
 
-int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
-    vector<double>& T_vect, vector<double>& Y_vect,
-    vector<double>& u_vect, double& vel_interf, int N_center, double* Y_leftb, int iter, double t_fix) {
+int integrate_All_IDA_M(int N_x) {
 
     void* mem;
     N_Vector yy, yp, avtol, cons, id;
@@ -834,13 +702,9 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 
     data->my_tcur = 0;
-    data->my_numjac = -1;
     data->t = 0;
-    Init_Data(data, N_x, x_vect,
-        T_vect, NEQ, NEQ_Y,
-        N_center, Y_leftb);
-    double jop;
-    cout << "Pf(340) = " << Pf(340) << "  Pf(280) = " << Pf(280) << "  Pf(373)  = "<<Pf(373) << std::endl;
+    Init_Data(data, N_x, NEQ);
+
     /* Allocate N-vectors. */
     yy = N_VNew_Serial(NEQ, ctx);
     if (check_retval((void*)yy, "N_VNew_Serial", 0)) return(1);
@@ -861,15 +725,10 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     atval = N_VGetArrayPointer(avtol);
     consval = N_VGetArrayPointer(cons);
     int number_spec = 0;
-    std::cout << "vel_in_IDA = " << vel_interf << "\n";
-
     int i_temp = 0;
     Get_mole_fr(X_tmp, Cell_Properties_inter.Y.data());
-    cout <<"Qg = " << get_Qg(Cell_Properties_inter.T, Cell_Properties_vector[preinter + 2].T, Cell_Properties_vector[preinter + 3].T, Cell_Properties_inter.Y.data(), x_vect[preinter + 1] - x_vect[preinter], p_inter) << std::endl;
-    cout <<"Qd + Ld*M = "<< -L_d(Cell_Properties_inter.T) * Cell_Properties_inter.vel * get_rho_d(Cell_Properties_inter.T) + get_Qd(Cell_Properties_vector[preinter - 2].T, Cell_Properties_vector[preinter - 1].T, Cell_Properties_inter.T, Cell_Properties_inter.Y.data(), x_vect[preinter + 1] - x_vect[preinter], p_inter) << std::endl;
-    cout << "Ld *M - Qg + Qd = " << get_Qg(Cell_Properties_inter.T, Cell_Properties_vector[preinter + 2].T, Cell_Properties_vector[preinter + 3].T, Cell_Properties_inter.Y.data(), x_vect[preinter + 1] - x_vect[preinter], p_inter) + L_d(Cell_Properties_inter.T) * Cell_Properties_inter.vel * get_rho_d(Cell_Properties_inter.T) - get_Qd(Cell_Properties_vector[preinter - 2].T, Cell_Properties_vector[preinter - 1].T, Cell_Properties_inter.T, Cell_Properties_inter.Y.data(), x_vect[preinter + 1] - x_vect[preinter], p_inter) << std::endl;
-    //double vel = get_vel(X_tmp, T_vect[0], T_vect[0], T_vect[0], T_vect[N_x - 1], T_vect[N_x - 1], x_vect[1] - x_vect[0], p_inter);
-   
+
+
     r_inter = x_vect[preinter] + (p_inter - 1) * (x_vect[preinter] - x_vect[preinter - 1]);
     double sum = 0.;
     double Dfm = 0;
@@ -896,35 +755,32 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
                 yval[i_temp] = Cell_Properties_vector[i].Y[k_spec];
                 atval[i_temp] = pow(10, -9);
                 id_val[i_temp] = 0.;
-                //cout << "Yi = " << i_temp << "   = " << yval[i_temp] << endl;
                 i_temp++;
             }
+
             yval[i_temp] = Cell_Properties_vector[i].T;
             consval[i_temp] = 1.0;
             atval[i_temp] = pow(5, 1);
             id_val[i_temp] = 1.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
+
             i_temp++;
             yval[i_temp] = Cell_Properties_vector[i].u;
-            //yval[i_temp] = dot_M / Cell_Properties_inter.rho / pow(r_inter, 2);
-            atval[i_temp] = pow(10, -3);
-            consval[i_temp] = 0.0;
-            id_val[i_temp] = 0;
-            //cout << "ui = " << i_temp << "   = " << yval[i_temp]  << endl;
-            i_temp++;
-            yval[i_temp] = Cell_Properties_inter.vel;
-            atval[i_temp] = pow(10, -3);
-            consval[i_temp] = 0.0;
-            id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
-            i_temp++;
-            yval[i_temp] = Cell_Properties_vector[i].rho;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
             i_temp++;
 
-            //if ((i + 1) % num_gas_species == 0) cout << endl;
+            yval[i_temp] = Cell_Properties_inter.vel;
+            atval[i_temp] = pow(10, -3);
+            consval[i_temp] = 0.0;
+            id_val[i_temp] = 0;
+            i_temp++;
+
+            yval[i_temp] = Cell_Properties_vector[i].rho;
+            atval[i_temp] = pow(10, -3);
+            consval[i_temp] = 0.0;
+            id_val[i_temp] = 0;
+            i_temp++;
         }
 
         if (i == preinter + 1) {
@@ -941,27 +797,25 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
             consval[i_temp] = 1.0;
             atval[i_temp] = pow(10, 0);
             id_val[i_temp] = 0.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
             i_temp++;
+
             yval[i_temp] = Cell_Properties_inter.u;
-           /// yval[i_temp] = dot_M / Cell_Properties_inter.rho /pow(r_inter, 2);
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "ui = " << i_temp << "   = " << yval[i_temp]  << endl;
             i_temp++;
+
+
             yval[i_temp] = Cell_Properties_inter.vel;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
             i_temp++;
 
             yval[i_temp] = Cell_Properties_inter.rho;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
             i_temp++;
 
 
@@ -970,34 +824,32 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
                 yval[i_temp] = Cell_Properties_vector[i].Y[k_spec];
                 atval[i_temp] = pow(10, -9);
                 id_val[i_temp] = 1.;
-                //cout << "Yi = " << i_temp << "   = " << yval[i_temp] << endl;
+
                 i_temp++;
             }
             yval[i_temp] = Cell_Properties_vector[i].T;
             consval[i_temp] = 1.0;
             atval[i_temp] = pow(10, 0);
             id_val[i_temp] = 1.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
+
             i_temp++;
             yval[i_temp] = Cell_Properties_vector[i].u;
-            //yval[i_temp] = dot_M / Cell_Properties_vector[i].rho / pow(x_vect[i], 2);
+
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 1;
-            //cout << "ui = " << i_temp << "   = " << yval[i_temp]  << endl;
+
             i_temp++;
             yval[i_temp] = Cell_Properties_inter.vel;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
             i_temp++;
 
             yval[i_temp] = Cell_Properties_vector[i].rho;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
             i_temp++;
         }
 
@@ -1007,27 +859,24 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
                 yval[i_temp] = Cell_Properties_vector[i].Y[k_spec];
                 atval[i_temp] = pow(10, -9);
                 id_val[i_temp] = 1.;
-                //cout << "Yi = " << i_temp << "   = " << yval[i_temp] << endl;
                 i_temp++;
             }
             yval[i_temp] = Cell_Properties_vector[i].T;
             consval[i_temp] = 1.0;
             atval[i_temp] = pow(10, 0);
             id_val[i_temp] = 1.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
             i_temp++;
+
             yval[i_temp] = Cell_Properties_vector[i].u;
-           // yval[i_temp] = dot_M / Cell_Properties_vector[i].rho / pow(x_vect[i], 2);
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 1;
-            //cout << "ui = " << i_temp << "   = " << yval[i_temp]  << endl;
             i_temp++;
+
             yval[i_temp] = Cell_Properties_inter.vel;
             atval[i_temp] = pow(10, -3);
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
-            //cout << "vl-inter i = " << i_temp << "   = " << yval[i_temp] << endl << endl;
             i_temp++;
 
             yval[i_temp] = Cell_Properties_vector[i].rho;
@@ -1035,22 +884,14 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
             consval[i_temp] = 0.0;
             id_val[i_temp] = 0;
             i_temp++;
-            //if ((i + 1) % num_gas_species == 0) cout << endl;
         }
     }
 
     MakePropertiesvectors(Cell_Properties_vector, Cell_Properties_inter, yval, data->Nx);
     Write_to_file("detail//" + to_string(preinter) + "_after_kins", "val", Cell_Properties_vector, Cell_Properties_inter);
-    /* Create and initialize  y, y', and absolute tolerance vectors. */
     t0 = ZERO;
-
     double rho;
-    ofstream f_ida;
-    double sumY = 0;
 
-    flag = 1;
-
-    cout << "Nx_ALL = " << data->Nx << "\n";
 
     i_temp = 0;
     int i_T, i_u, i_vel_interf, di_l, di_r, i_inter_T;
@@ -1091,8 +932,6 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
 
         vel_interf_curr = Cell_Properties_vector[i].vel;
-        //cout << "in func i = " << i << "\n";
-        //cout << "M = " << data->M << "\n\n";
 
  
         Get_molar_cons(Xi, Cell_Properties_vector[i].Y.data(), Cell_Properties_vector[i].T);
@@ -1109,31 +948,25 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
             double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 ypval[i_temp] = 0;
-                //cout << "i_temp Y initial < pre  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
                 Cell_prouds_vector[i].Y[k_spec] = ypval[i_temp];
                 i_temp++;
             }
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
             ypval[i_temp] = F_right_T_d(data,
                 T_prev, T_curr, T_next,
                 x_vect[i - 1], x_vect[i], x_vect[i + 1],
                 u_prev, u_curr, u_next, i) / rho / Cp;
             Cell_prouds_vector[i].T = ypval[i_temp];
-            //cout << "i_temp  T initial  < pre = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp u initial < pre = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].u = ypval[i_temp];
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp vel initial = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].vel = ypval[i_temp];
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp rho initial = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].rho = ypval[i_temp];
             i_temp++;
         }
@@ -1150,28 +983,22 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
 
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 ypval[i_temp] = 0;
-                //cout << "i_temp Y initial pre  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
                 Cell_prouds_vector[i].Y[k_spec] = ypval[i_temp];
                 i_temp++;
             }
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
             ypval[i_temp] = F_right_T_interfase_l(X_inter, T_inter_3l, T_inter_2l, T_curr, T_inter, x_vect[i - 1], x_vect[i], r_inter, h, p_inter) / rho / Cp;
-            //cout << "i_temp  T initial pre = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
             Cell_prouds_vector[i].T = ypval[i_temp];
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp u initial pre = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].u = ypval[i_temp];
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp vel initial pre = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].vel = ypval[i_temp];
             i_temp++;
 
             ypval[i_temp] = 0;
-            //cout << "i_temp rho initial = " << i_temp << " = " << ypval[i_temp] << "\n";
             Cell_prouds_vector[i].rho = ypval[i_temp];
             i_temp++;
         }
@@ -1222,8 +1049,6 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
             i_temp++;
 
             find_diff_slag(data, T_curr, T_next, Yi, Yinext, Xi, Xinext, YkVk_r, Y_tmp_r, X_tmp_r, gradX_r, data->rho_r, data->Vc_r, i, 'r');
-
-            sumY = 0;
 
             rho = get_rho(Yi, T_curr, 'g');
 
@@ -1368,33 +1193,14 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     if (check_retval(&retval, "IDASetNonlinearSolver", 1)) return(1);
 
     IDASetMaxNumSteps(mem, pow(10,15));
-
-
-    //IDASetInitStep(mem, pow(10, -7));
-
-    //IDASetMaxOrd(mem, 1);
-    //IDASetInitStep(mem, pow(10, -7));
-    //tout = RCONST(0.0000000000000001);
-    retval = IDASetId(mem, id);
-    if (check_retval(&retval, "IDASetId", 1)) return(1);
     /* In loop, call IDASolve, print results, and test for error.
         Break out of loop when NOUT preset output times have been reached. */
 
     iout = 0;
     tout = 1.e-7;
     double tout1 = tout;
-    int iend = 2000000;
-    int number = 1;
-    ofstream fout;
-    ofstream foutw;
-    double Y_H2, Y_O2;
     double W, w_dot;
-    double sum_Y = 0;
-    double alpha = 1;
 
-    //retval = IDACalcIC(mem, 2, tout);
-    //if (check_retval(&retval, "IDACalcIC", 1)) return(1);
-    //corrector = 0;
     data->N_m = 0;
     ofstream params;
     params.open("params.dat");
@@ -1426,13 +1232,8 @@ int integrate_All_IDA_M(int N_x, vector<double>& x_vect,
     }
     params.close();
     std::cout << "tout = " << tout << "\n";
-    //cout << "\n\n\n\n";
-    /* Print final statistics to the screen */
     cout << "\nFinal Statistics:\n";
     retval = IDAPrintAllStats(mem, stdout, SUN_OUTPUTFORMAT_TABLE);
-    /*Write_to_file2("detail/detail" + to_string(iter), f_ida, x_vect,
-                            T_vect, Y_vect, Yp_vect, M, N_x, 1);*/
-                            /* Free memory */
     free(data);
     IDAFree(&mem);
     SUNNonlinSolFree(NLS);
@@ -1464,8 +1265,7 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
     yval = N_VGetArrayPointer(yy);
     ypval = N_VGetArrayPointer(yp);
     rval = N_VGetArrayPointer(rr);
-    int Ncentr = data->N_centr;
-    double alpha = 1;
+
     double rho = get_rho(Yi, data->Tl, 'g');
     double Vc = 0;
     int i_temp = 0;
@@ -1484,17 +1284,13 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
 
     int retval = IDAGetCurrentStep(data->sun_mem, &step);
     check_retval(&retval, "IDAGetCurrentStep", 1);
-    /* retval = IDAGetJacTime(mem, &tj);
-     check_retval(&retval, "IDAGetJacTime", 1);*/
+
     double tprev = data->t;
     data->t = tres;
     t_curr = tres;
     double dt = tres - tprev;
     double h = x_vect[preinter + 1] - x_vect[preinter];
     double rho_inter;
-    //cout << "r inter = " << x_vect[preinter] + (p_inter - 1) * h << "\n";
-    //cout << "corector = " << corector << "\n";
-    //cout << "p inter = " << p_inter << "\n";
     MakePropertiesvectors(Cell_Properties_vector, Cell_Properties_inter, yval, myNx);
 
     T_inter = Cell_Properties_inter.T;
@@ -1502,15 +1298,14 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
     vel_inter = Cell_Properties_inter.vel;
     rho_inter = Cell_Properties_inter.rho;
     Y_inter = Cell_Properties_inter.Y.data();
-   /* if (Cell_Properties_inter.T < 290.0) {
-        IDASetMaxStep(data->sun_mem, 1.e-8);
-    }*/
+
     double V = vel_inter / h;
     set_p(tres, dt, step, V, h);
     if (vizov % 100 == 0) {
         cout << "tres = " << tres << "\n";
         cout << "p_inter = " << p_inter << "\n";
-        cout << "tanh(1.e8 * t_curr + 0.1)  = " << tanh(1.e8 * t_curr + 0.1) <<"\n";
+        cout << "V = " << V << "\n";
+        cout << "tanh(1.e8 * t_curr + 0.01)  = " << tanh(1.e8 * t_curr + 0.01) <<"\n";
         cout << endl;
         //cout << "vel_inter = " << vel_inter << "\n";
         //cout << "vel_inter = " << vel_inter << "\n";
@@ -1553,17 +1348,11 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
             chem_vel(Sn, Hn, forward_arr, reverse_arr, equilib_arr,
                 Cell_Properties_vector[i].T, Xi, ydot, i);
         }
-        //cout << "i = " << i << "\n";
-        //cout << "T = " << Cell_Properties_vector[i].T << "\n";
-        //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-        //    cout << "ydot = " << ydot[k_spec] << "\n";
-        //}
-        //cout << "\n\n\n\n";
+
         Get_mole_fr(Xiprev, Cell_Properties_vector[i - 1].Y.data()); Get_mole_fr(Xi, Cell_Properties_vector[i].Y.data()); Get_mole_fr(Xinext, Cell_Properties_vector[i + 1].Y.data());
         Get_mole_fr(Xi_2, Cell_Properties_vector[preinter + 2].Y.data()); Get_mole_fr(Xi_3, Cell_Properties_vector[preinter + 3].Y.data()); Get_mole_fr(X_inter, Cell_Properties_inter.Y.data());
 
         if (i < preinter) {
-            //cout << "<preinter\n";
             set_fuel_rval(data, T_prev, T_curr, T_next,
                 u_prev, u_curr, u_next,
                 vel_prev, vel_curr, vel_next,
@@ -1572,7 +1361,6 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
         }
 
         if (i == preinter) {
-            //cout << "\n\n\npreinter\n"; 
             T_inter_2l = Cell_Properties_vector[preinter - 1].T;
             T_inter_3l = Cell_Properties_vector[preinter - 2].T;
 
@@ -1586,8 +1374,6 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
         }
 
         if (i == preinter + 1) {
-            //cout << "\n\n\npreinter + 1\n";
-
             T_inter_2l = Cell_Properties_vector[preinter - 1].T;
             T_inter_3l = Cell_Properties_vector[preinter - 2].T;
             T_inter_2r = Cell_Properties_vector[preinter + 2].T;
@@ -1617,11 +1403,6 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
 
 
         if (i > preinter + 1) {
-            //cout << "\n\n\n > preinter + 1\n";
-            //cout << "T_prev" << T_prev << "\n";
-            //cout << "T_curr" << T_curr << "\n";
-            //cout << "T_next" << T_next << "\n\n";
-
             set_rval_gas(data, T_prev, T_curr, T_next,
                 u_prev, u_curr, u_next,
                 vel_prev, vel_curr, vel_next,
@@ -1640,34 +1421,12 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
 
 
 
-//double F_right_rho(UserData data,
-//    double rho_l, double rho, double rho_r, double r_l, double r, double r_r,
-//    double u_l, double u, double u_r,
-//    int number_cell) {
-//    return -2 / (r_r - r_l) / pow(r, 2) * (pow(0.5 * (r_r + r), 2.) * (rho_r * u_r + rho * u) / (2.) - pow(0.5 * (r + r_l), 2.) * (rho * u + rho_l * u_l) / 2.);
-//
-//}
-//double F_right_rho_inter_r(UserData data,
-//    double rho_inter, double rho, double rho_inter_2r, double rho_inter_3r,
-//    double u_inter, double u, double u_inter_2r, double u_inter_3r, double r_l, double r, double r_r, double p) {
-//    double h = r_r - r;
-//    double r_inter = x_vect[preinter] + (p_inter - 1) * h;
-//    return -1 / pow(r, 2) / ((r_r + r) / 2 - r_inter) * (pow(0.5 * (r_r + r), 2.) * (rho_inter_2r * u_inter_2r + rho * u) / 2 - pow(r_inter, 2) * rho_inter * u_inter);
-//}
-
-
 double F_right_rho(UserData data,
     double rho_l, double rho, double rho_r, double r_l, double r, double r_r,
     double u_l, double u, double u_r,
     int number_cell) {
-    //if (u > 0) {
-    //    return -1 / (r - r_l) / pow(r, 2) * (pow(r, 2.) * rho * u - pow(r_l, 2.) * rho_l * u_l);
-    //}
-    //if (u < 0) {
-    //    return -1 / (r_r - r) / pow(r, 2) * (pow(r_r, 2.) * rho_r * u_r - pow(r, 2.) * rho * u);
-    //}
+
     return -1 / (r - r_l) / pow(r, 2) * (pow(r, 2.) * rho * u - pow(r_l, 2.) * rho_l * u_l);
-    //return - 2 / (r_r - r_l) / pow(r, 2) * (pow(0.5 * (r_r + r), 2.) * (rho_r * u_r + rho * u) / 2. - pow(0.5 * (r + r_l), 2.) * (rho * u + rho_l * u_l) / 2.);
 }
 double F_right_rho_inter_r(UserData data,
     double rho_inter, double rho, double rho_inter_2r, double rho_inter_3r,
@@ -1676,13 +1435,6 @@ double F_right_rho_inter_r(UserData data,
     double r_inter = x_vect[preinter] + (p_inter - 1) * h;
     double rho_r = get_rho(Yinext, Cell_Properties_vector[preinter + 2].T, 'g');
     double u_r = Cell_Properties_vector[preinter + 2].u;
-    //if (u > 0) {
-    //    return -1 / (r - r_inter) / pow(r, 2) * (pow(r, 2.) * rho * u - pow(r_inter, 2) * rho_inter * u_inter);
-    //}
-    //if (u < 0) {
-    //    return -1 / (r_r - r) / pow(r, 2) * (pow(r_r, 2.) * rho_inter_2r * u_inter_2r - pow(r, 2) * rho * u);
-    //}
-    //return -1 / pow(r, 2) / ((r_r + r) / 2 - r_inter) * (pow(0.5 * (r_r + r), 2.) * (rho_inter_2r * u_inter_2r + rho * u) / 2 - pow(r_inter, 2) * rho_inter * u_inter);
    return -1 / (r - r_inter) / pow(r, 2) * (pow(r, 2.) * rho * u - pow(r_inter, 2) * rho_inter * u_inter);
 } 
 
@@ -1702,30 +1454,21 @@ void set_fuel_rval(UserData data, double T_prev, double T_curr, double T_next,
 
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
         rval[i_temp] = Yi[k_spec] - Yinext[k_spec];
-        //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rval[i_temp] << "\n";
-        //cout << "i_temp Yp initial  = " << i_temp << " Yp  = " << ypval[i_temp] << "\n";
         i_temp++;
     }
-    //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
     rval[i_temp] = ypval[i_temp] - F_right_T_d(data,
         T_prev, T_curr, T_next,
         x_vect[i - 1], x_vect[i], x_vect[i + 1],
         u_prev, u_curr, u_next, i) / rho / Cp;
-    //cout << "i_temp  T initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp  Tp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = u_curr - u_next;
-    //cout << "i_temp u initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = vel_curr - vel_next;
-    //cout << "i_temp vel initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = rho_curr - rho_next;
-    //cout << "i_temp rho initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp rho_p initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
 }
 
@@ -1745,34 +1488,22 @@ void set_interface_l_rval(UserData data, double T_prev, double T_curr, double T_
     double rho_r = get_rho(Yinext, T_next, 'd');
 
     double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
-    //cout << "\n\n\n";
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
         rval[i_temp] = Yi[k_spec] - Y_inter[k_spec];
-        //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
-        //cout << "i_temp  Y initial = " << i_temp << " = " << rval[i_temp] << "\n";
-        //cout << "i_temp  Yp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
         i_temp++;
     }
-    //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
     rval[i_temp] = ypval[i_temp] - F_right_T_interfase_l(X_inter, 
         T_inter_3l, T_inter_2l, 
         T_curr, T_inter, x_vect[i - 1], x_vect[i], r_inter, h, p_inter) / rho / Cp;
-    //cout << "i_temp T initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp Tp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = u_curr - u_inter;
-    // cout << "i_temp u initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-    //cout << "i_temp u initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = vel_curr - vel_inter;
-    //cout << "i_temp vel initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = rho_curr - rho_inter;
-    //cout << "i_temp rho initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp rhop initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
 }
 
@@ -1795,35 +1526,19 @@ void set_interface_rval(UserData data, double T_prev, double T_curr, double T_ne
         YkVk[k] = YkVk_func(k, T_inter, Y_inter, gradX, X_inter, Y_inter);
         Vc -= YkVk[k];
     }
-    //cout << "\n\n\n";
     double Pf_ = Pf(T_inter);
     double mol_w = my_mol_weight(komponents[Fuel]);
     double W = get_W(Y_inter);
-    //for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-    //    if (k_spec != komponents[Fuel]) {
-    //        rval[i_temp] = (1 - Cell_Properties_inter.Y[komponents[Fuel]]) * Yend[k_spec] - yval[i_temp];
-    //    }
-    //    else {
-    //        rval[i_temp] = Pf_ / P * mol_w / W - yval[i_temp];
-    //    }
-    //    i_temp++;
-    //    //Cell_Properties_inter.Y[k_spec] = Yend[k_spec];
-    //}
+
     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
         rval[i_temp] = F_rightY_interface(data, k_spec, Vc,
             T_inter,
             x_vect[i - 1], x_vect[i], u_inter, vel_inter, p_inter, i);
-        //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
-        //cout << "i_temp Y initial = " << i_temp << " rval = " << rval[i_temp] << "\n";
-        //cout << "i_temp Y initial = " << i_temp << " Y = " << yval[i_temp] << "\n";
+
         i_temp++;
     }
-    //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
     rval[i_temp] = F_right_T_interfase(X_inter, T_inter_3l, T_inter_2l, T_inter, T_inter_2r,
         T_inter_3r, vel_inter, r_inter, h, p_inter);
-    //cout << "i_temp  T initial = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
-    //cout << "i_temp  T initial = " << i_temp << " rval = " << rval[i_temp] << "\n";
-    //cout << "i_temp T initial = " << i_temp << " T = " << yval[i_temp] << "\n";
     i_temp++;
 
     double sum = 0.;
@@ -1843,20 +1558,13 @@ void set_interface_rval(UserData data, double T_prev, double T_curr, double T_ne
     double dot_M = get_dotM(Y_inter[komponents[Fuel]], T_inter, r_inter, rho_inter, Dfm);
     
     rval[i_temp] = F_right_rho_interface(rho_inter, vel_inter, u_inter, T_inter);
-    //rval[i_temp] = -vel_inter - dot_M / (get_rho(Y_inter, T_inter, 'd') * pow(r_inter, 2));
-    // cout << "i_temp u initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-    //cout << "i_temp u initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = F_right_u_inter(data, Vc, komponents[Fuel],
         T_inter, x_vect[i - 1], x_vect[i], u_inter, vel_inter, p_inter, i);
-
-    //rval[i_temp] = rho_inter * u_inter - dot_M / pow(r_inter, 2);
-    //cout << "i_temp vel initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = rho_inter - get_rho(Y_inter, T_inter, 'g');
-    //cout << "i_temp rho initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 }
 
@@ -1864,14 +1572,7 @@ void set_interface_rval(UserData data, double T_prev, double T_curr, double T_ne
 double F_right_rho_interface(double rhog, double vel, double u_inter, double T_inter) {
     double rhod = get_rho(Y_inter, T_inter, 'd');
     double Vd = 0;
-    //cout << "rhod = " << rhod << "\n";
     return rhod * (-vel) - rhog * (u_inter - vel);
-
-   /* double sum = 0;
-    for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-        sum += Y_inter[k_spec];
-    }
-    return sum - 1;*/
 }
 
 void set_interface_r_rval(UserData data, double T_prev, double T_curr, double T_next,
@@ -1896,11 +1597,6 @@ void set_interface_r_rval(UserData data, double T_prev, double T_curr, double T_
             u_prev, u_curr, u_next, i) / rho_curr;
 
         rval[i_temp] = ypval[i_temp] - dYdt;
-        //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
-        //cout << "i_temp Y initial = " << i_temp << " rval = " << rval[i_temp] << "\n";
-       // cout << "i_temp Yp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-       // cout << "i_temp Y initial = " << i_temp << " Y = " << yval[i_temp] << "\n";
-        //dWdt += dYdt / my_mol_weight(k_spec);
         dWdt += ypval[i_temp] / my_mol_weight(k_spec);
         i_temp++;
     }
@@ -1908,49 +1604,27 @@ void set_interface_r_rval(UserData data, double T_prev, double T_curr, double T_
     W = get_W(Cell_Properties_vector[preinter + 1].Y.data());
     dWdt *= -pow(W, 2);
     dWdt_vect[i] = dWdt;
-    //cout << "i = " << i << "drhoddt =" << drhodt << "\n";
     double Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
     double dTdt = F_right_T_interfase_r(X_inter,
         T_inter, T_curr, T_inter_2r, T_inter_3r,
         u_curr, r_inter, x_vect[i], x_vect[i + 1],
         h, p_inter) / rho_curr / Cp;
         dTdt_vect[i] = dTdt;
-    //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
 
     double drhodt = -P * W / R / pow(T_curr, 2) * dTdt + P / R / T_curr * dWdt;
     drhodt_vect[i] = drhodt;
     rval[i_temp] = ypval[i_temp] - dTdt;
-    //cout << "i_temp  T initial = " << i_temp << " rval = " << rval[i_temp] << "\n";
-    //cout << "i_temp  Tp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-   // cout << "i_temp T initial = " << i_temp << " T = " << yval[i_temp] << "\n";
-    //cout << "i_temp  T initial = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
     i_temp++;
 
-    //rval[i_temp] = ypval[i_temp] - F_right_u_inter_r(data, T_inter, T_curr, T_next, u_inter, u_curr, u_inter_2r, u_inter_3r,
-    //    h, p_inter);
 
     rval[i_temp] = drhodt - F_right_rho_inter_r(data, rho_inter, rho_curr, rho_inter_2r, rho_inter_3r,
     u_inter, u_curr, u_inter_2r, u_inter_3r, x_vect[i - 1], x_vect[i], x_vect[i + 1], p_inter);
-
-    //cout << "drhodt i_r = " << i << " = " << drhodt << "\n";
-    //cout << "dTdt i_r = " << i << " = " << ypval[i_temp - 1] << "\n";
-    //cout << "dWdt i_r = " << i << " = " << dWdt << "\n";
-    //cout << "i_temp u initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = vel_curr - vel_inter;
-    //cout << "i_temp vel initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
-    //rval[i_temp] = ypval[i_temp] - F_right_rho_inter_r(data, rho_inter, rho_curr, rho_inter_2r, rho_inter_3r,
-    //    u_inter, u_curr, u_inter_2r, u_inter_3r, x_vect[i - 1], x_vect[i], x_vect[i + 1], p_inter);
     rval[i_temp] = rho_curr - get_rho(Yi, T_curr, 'g');
-    //rval[i_temp] = rho_curr * u_curr * pow(x_vect[i], 2) - rho_inter * u_inter * pow(r_inter, 2);
-
-    //cout << "i_temp rho initial = " << i_temp << " = " << rval[i_temp] << "\n";;
-    //cout << "i_temp rho_p initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-    /*cout << " True drho / dt = " << drhodt << std::endl;
-    cout << " Ida drho / dt = " << ypval[i_temp] << std::endl;*/
     i_temp++;
 }
 
@@ -1977,10 +1651,6 @@ void set_rval_gas(UserData data, double T_prev, double T_curr, double T_next,
             u_prev, u_curr, u_next, i) / rho_curr;
 
         rval[i_temp] = ypval[i_temp] - dYdt;
-        //cout << "i_temp Y initial  = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
-        //cout << "i_temp  Y initial = " << i_temp << " = " << rval[i_temp] << "\n";
-      //  cout << "i_temp  Yp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-        //dWdt += dYdt / my_mol_weight(k_spec);
         dWdt += ypval[i_temp] /  my_mol_weight(k_spec);
         i_temp++;
     }
@@ -1990,8 +1660,6 @@ void set_rval_gas(UserData data, double T_prev, double T_curr, double T_next,
     W = get_W(Cell_Properties_vector[i].Y.data());
     dWdt *= -pow(W, 2);
     dWdt_vect[i] = dWdt;
-    //cout << "i = " << i << "drhoddt =" << drhodt << "\n";
-    //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
     double dTdt = F_right_T_g(data,
         T_prev, T_curr, T_next,
         x_vect[i - 1], x_vect[i], x_vect[i + 1],
@@ -2001,40 +1669,23 @@ void set_rval_gas(UserData data, double T_prev, double T_curr, double T_next,
 
     double drhodt = -P * W / R / pow(T_curr, 2) * dTdt + P / R / T_curr * dWdt;
     drhodt_vect[i] = drhodt;
-    //cout << "i_temp  T initial = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
-    //cout << "i_temp T initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp Tp initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
     dTdt_vect[i] = dTdt;
-    //rval[i_temp] = ypval[i_temp] - F_right_u(data, T_prev, T_curr, T_next, 
-    //    x_vect[i - 1], x_vect[i], x_vect[i+1], u_prev, u_curr, u_next, i);
     rval[i_temp] = drhodt - F_right_rho(data, rho_prev, rho_curr, rho_next, x_vect[i - 1], x_vect[i], x_vect[i + 1],
     u_prev, u_curr, u_next, i);
-    //cout << "drhodt i = " << i << " = " << drhodt << "\n";
-    //cout << "dTdt i = " << i << " = " << ypval[i_temp - 1] << "\n";
-    //cout << "dWdt i = " << i << " = " << dWdt << "\n\n\n";
-    // cout << "i_temp u initial = " << i_temp << " = " << ypval[i_temp] << "\n";
-    //cout << "i_temp u initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
     rval[i_temp] = vel_curr - vel_prev;
-    //cout << "i_temp vel initial = " << i_temp << " = " << rval[i_temp] << "\n";
     i_temp++;
 
-    //rval[i_temp] = ypval[i_temp] - F_right_rho(data, rho_prev, rho_curr, rho_next, x_vect[i - 1], x_vect[i], x_vect[i + 1],
-    //    u_prev, u_curr, u_next, i);
     rval[i_temp] = rho_curr - get_rho(Yi, T_curr, 'g');
-   // rval[i_temp] = rho_curr * u_curr * pow(x_vect[i], 2) - rho_prev * u_prev * pow(x_vect[i - 1], 2);
-    //cout << "i_temp rho initial = " << i_temp << " = " << rval[i_temp] << "\n";
-    //cout << "i_temp rho_p initial = " << i_temp << " = " << ypval[i_temp] << "\n";
     i_temp++;
 }
 
 void set_p(double tres, double dt, double step, double V, double h) {
     i_ida++;
-    //cout << "V = " << V << "\n";
     double V_prev = vel_prev / h;
-    if (abs(V) / 100.0 < abs(V_prev)) {
+    if (abs(V) / 100.0 < abs(V_prev) || abs(V) / 100.0 > abs(V_prev)) {
         if (p_inter + dt * V > 1.999 && dt < 0)
             p_inter += 0;
         else
@@ -2059,9 +1710,6 @@ double F_right_u(UserData data,
     double rho = get_rho(Yi, T, 'g');
     double rho_l = get_rho(Yiprev, Tprev, 'g');
 
-   /* double du_dr = h_left / h / (h + h_left) * unext  +
-        (h - h_left) / h / h_left * u -
-        h / h_left / (h + h_left)  * uprev;*/
     double du_dr = (u - uprev) / (x - xprev);
     return -u * du_dr;
 
@@ -2084,516 +1732,12 @@ void set_Dij_res(double T) {
     }
 }
 
-void resize_koeff_vectors(int N_x) {
-    update_koeffs = 1;
-    Cp_arr.resize(N_x);
-    forward_arr_save.resize(N_x);
-    reverse_arr_save.resize(N_x);
-    H_arr.resize(N_x);
-    Lambda_arr.resize(N_x);
-    Lambda_arr_r.resize(N_x);
-    Lambda_arr_l.resize(N_x);
-    Dij_arr.resize(N_x);
-    Dij_arr_r.resize(N_x);
-    Dij_arr_l.resize(N_x);
-
-    for (int i = 0; i < N_x; i++) {
-        forward_arr_save[i].resize(num_react);
-        reverse_arr_save[i].resize(num_react);
-        reverse_arr_save.resize(N_x);
-        Cp_arr[i].resize(num_gas_species);
-        H_arr[i].resize(num_gas_species);
-        Lambda_arr[i].resize(num_gas_species);
-        Lambda_arr_r[i].resize(num_gas_species);
-        Lambda_arr_l[i].resize(num_gas_species);
-
-        Dij_arr[i].resize(num_gas_species);
-        Dij_arr_r[i].resize(num_gas_species);
-        Dij_arr_l[i].resize(num_gas_species);
-        for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-            Dij_arr[i][k_spec].resize(num_gas_species);
-            Dij_arr_r[i][k_spec].resize(num_gas_species);
-            Dij_arr_l[i][k_spec].resize(num_gas_species);
-        }
-    }
-}
-
 double get_dotM(double Ys, double Tval, double ri, double rhog, double Dfm) {
     double By, Sh;
     By = (Ys) / (1 - Ys);
     return   rhog * ri * Dfm * log(1 + By);
 }
 
-int IdaIC(int NEQ) {
-    void* mem;
-    N_Vector yy, yp, avtol, cons, id;
-    realtype rtol, * yval, * ypval, * atval, * consval, * id_val;
-    realtype t0, tout, tret;
-    int iout, retval, retvalr;
-    SUNMatrix A;
-    SUNLinearSolver LS;
-    SUNNonlinearSolver NLS;
-    SUNContext ctx;
-    UserData data;
-    data = (UserData)malloc(sizeof * data);
-    int j = 0;
-    mem = NULL;
-    cons = yy = yp = avtol = NULL;
-    yval = ypval = atval = NULL;
-    A = NULL;
-    LS = NULL;
-    NLS = NULL;
-    /* Create SUNDIALS context */
-    retval = SUNContext_Create(NULL, &ctx);
-    if (check_retval(&retval, "SUNContext_Create", 1)) return(1);
-
-
-    data->my_tcur = 0;
-    data->my_numjac = -1;
-    data->t = 0;
-    /* Allocate N-vectors. */
-    yy = N_VNew_Serial(NEQ, ctx);
-    if (check_retval((void*)yy, "N_VNew_Serial", 0)) return(1);
-
-    yp = N_VClone(yy);
-    if (check_retval((void*)yp, "N_VNew_Serial", 0)) return(1);
-    avtol = N_VClone(yy);
-    if (check_retval((void*)avtol, "N_VNew_Serial", 0)) return(1);
-    cons = N_VClone(yy);
-    if (check_retval((void*)cons, "N_VNew_Serial", 0)) return(1);
-    id = N_VClone(yy);
-
-
-    yval = N_VGetArrayPointer(yy);
-    id_val = N_VGetArrayPointer(id);
-    ypval = N_VGetArrayPointer(yp);
-    rtol = RCONST(1.0e-3);
-    atval = N_VGetArrayPointer(avtol);
-    consval = N_VGetArrayPointer(cons);
-    int number_spec = 0;
-    Get_mole_fr(X_tmp, Cell_Properties_inter.Y.data());
-    r_inter = x_vect[preinter] + (p_inter - 1) * (x_vect[preinter] - x_vect[preinter - 1]);
-    Get_mole_fr(X_inter, Cell_Properties_inter.Y.data());
-    for (int i = 1; i < Nx - 1; i++) {
-        if (i < preinter + 1) {
-            yval[i - 1] = Cell_Properties_vector[i].T;
-            consval[i - 1] = 1.0;
-            atval[i - 1] = pow(10, -1);
-            id_val[i - 1] = 1.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
-
-            //if ((i + 1) % num_gas_species == 0) cout << endl;
-        }
-
-        if (i == preinter + 1) {
-            r_inter = x_vect[preinter] + (p_inter - 1) * (x_vect[preinter] - x_vect[preinter - 1]);
-            yval[i - 1] = Cell_Properties_inter.T;
-            consval[i - 1] = 1.0;
-            atval[i - 1] = pow(10, -1);
-            id_val[i - 1] = 0.;
-
-            yval[i] = Cell_Properties_vector[i].T;
-            consval[i] = 1.0;
-            atval[i] = pow(10, -1);
-            id_val[i] = 1.;
-        }
-
-        if (i > preinter + 1) {
-            
-            yval[i] = Cell_Properties_vector[i].T;
-            consval[i] = 1.0;
-            atval[i] = pow(10, -1);
-            id_val[i] = 1.;
-            //cout << "Ti = " << i_temp << "   = " << yval[i_temp] << endl;
-        }
-    }
-    /* Create and initialize  y, y', and absolute tolerance vectors. */
-    t0 = ZERO;
-
-    double rho;
-    ofstream f_ida;
-    double sumY = 0;
-
-    flag = 1;
-
-    cout << "Nx_ALL = " << Nx << "\n";
-
-    int i_T, i_u, i_vel_interf, di_l, di_r, i_inter_T;
-    double T_prev, T_curr, T_next;
-    double u_prev, u_curr, u_next;
-    double vel_prev, vel_curr, vel_next;
-    double rho_prev, rho_curr, rho_next;
-
-    double T_inter, T_inter_2l, T_inter_3l, T_inter_2r, T_inter_3r;
-    double vel_inter, rho_inter;
-    double vel_interf_curr;
-    for (int i = 1; i < Nx - 1; i++) {
-        T_inter = Cell_Properties_inter.T;
-        u_inter = 0;
-
-        Yiprev = Cell_Properties_vector[i - 1].Y.data();
-        Yi = Cell_Properties_vector[i].Y.data();
-        Yinext = Cell_Properties_vector[i + 1].Y.data();
-        Y_inter = Cell_Properties_inter.Y.data();
-
-        T_prev = Cell_Properties_vector[i - 1].T;
-        T_curr = Cell_Properties_vector[i].T;
-        T_next = Cell_Properties_vector[i + 1].T;
-
-        u_prev = 0;
-        u_curr = 0;
-        u_next = 0;
-
-
-        //cout << "in func i = " << i << "\n";
-        //cout << "M = " << data->M << "\n\n";
-
-
-        Get_mole_fr(Xiprev, Cell_Properties_vector[i - 1].Y.data()); Get_mole_fr(Xi, Cell_Properties_vector[i].Y.data()); Get_mole_fr(Xinext, Cell_Properties_vector[i + 1].Y.data());
-        Get_mole_fr(Xi_2, Cell_Properties_vector[preinter + 2].Y.data()); Get_mole_fr(Xi_3, Cell_Properties_vector[preinter + 3].Y.data()); Get_mole_fr(X_inter, Cell_Properties_inter.Y.data());
-
-
-        if (i < preinter) {
-
-            rho = get_rho(Yi, T_curr, 'd');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
-            ypval[i - 1] = F_right_T_d(data,
-                T_prev, T_curr, T_next,
-                x_vect[i - 1], x_vect[i], x_vect[i + 1],
-                u_prev, u_curr, u_next, i) / rho / Cp;
-        }
-
-        if (i == preinter) {
-            T_inter_2l = Cell_Properties_vector[preinter - 1].T;
-            T_inter_3l = Cell_Properties_vector[preinter - 2].T;
-
-            double h = x_vect[preinter] - x_vect[preinter - 1];
-            r_inter = x_vect[preinter] + (p_inter - 1) * h;
-
-            rho = get_rho(Yi, T_curr, 'd');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
-            ypval[i - 1] = F_right_T_interfase_l(X_inter, T_inter_3l, T_inter_2l, T_curr, T_inter, x_vect[i - 1], x_vect[i], r_inter, h, p_inter) / rho / Cp;
-        }
-
-        if (i == preinter + 1) {
-            T_inter_2l = Cell_Properties_vector[preinter - 1].T;
-            T_inter_3l = Cell_Properties_vector[preinter - 2].T;
-            T_inter_2r = Cell_Properties_vector[preinter + 2].T;
-            T_inter_3r = Cell_Properties_vector[preinter + 3].T;
-            u_inter_2r = Cell_Properties_vector[preinter + 2].u;
-            u_inter_3r = Cell_Properties_vector[preinter + 3].u;
-            double rho_inter_2r = Cell_Properties_vector[preinter + 2].rho;
-            double rho_inter_3r = Cell_Properties_vector[preinter + 3].rho;
-            double h = x_vect[preinter] - x_vect[preinter - 1];
-            r_inter = x_vect[preinter] + (p_inter - 1.0) * h;
-
-
-            rho = get_rho(Yi, T_inter, 'g');
-            double Cp = get_Cp(num_gas_species, Yi, T_inter, 'g');
-            ypval[i - 1] = 0;
-            
-
-            rho = get_rho(Yi, T_curr, 'g');
-            Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
-            ypval[i] = F_right_T_interfase_r(X_inter,
-                T_inter, T_curr, T_inter_2r, T_inter_3r,
-                u_curr, r_inter, x_vect[i], x_vect[i + 1],
-                h, p_inter) / rho / Cp;
-        }
-
-
-        if (i > preinter + 1) {
-            //cout << "T_prev" << T_prev << "\n";
-            //cout << "T_curr" << T_curr << "\n";
-            //cout << "T_next" << T_next << "\n\n";
-            rho = get_rho(Yi, T_curr, 'g');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
-            ypval[i] = F_right_T_g(data,
-                T_prev, T_curr, T_next,
-                x_vect[i - 1], x_vect[i], x_vect[i + 1],
-                u_prev, u_curr, u_next, i) / rho / Cp;
-        }
-    }
-    
-    /* Call IDACreate and IDAInit to initialize IDA memory */
-    mem = IDACreate(ctx);
-    if (check_retval((void*)mem, "IDACreate", 0)) return(1);
-
-    retval = IDAInit(mem, funcT_IDA, t0, yy, yp);
-    if (check_retval(&retval, "IDAInit", 1)) return(1);
-    /* Call IDASVtolerances to set tolerances */
-    data->sun_mem = mem;
-    retval = IDASVtolerances(mem, rtol, avtol);
-    if (check_retval(&retval, "IDASVtolerances", 1)) return(1);
-    retval = IDASetConstraints(mem, cons);
-    retval = IDASetUserData(mem, data);
-    if (check_retval(&retval, "IDASetUserData", 1)) return(1);
-    //retval = IDASetMaxNumSteps(mem, 1000);
-    /* Create dense SUNMatrix for use in linear solves */
-    int mu = 4 * (count_var_in_cell);
-    int ml = 4 * (count_var_in_cell);
-
-    A = SUNBandMatrix(NEQ, mu, ml, ctx);
-    if (check_retval((void*)A, "SUNBandMatrix", 0)) return(1);
-
-    /* Create banded SUNLinearSolver object */
-    LS = SUNLinSol_Band(yy, A, ctx);
-    if (check_retval((void*)LS, "SUNLinSol_Band", 0)) return(1);
-
-    /* Attach the matrix and linear solver */
-    retval = IDASetLinearSolver(mem, LS, A);
-    if (check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
-
-    NLS = SUNNonlinSol_Newton(yy, ctx);
-    if (check_retval((void*)NLS, "SUNNonlinSol_Newton", 0)) return(1);
-
-    /* Attach the nonlinear solver */
-    retval = IDASetNonlinearSolver(mem, NLS);
-    if (check_retval(&retval, "IDASetNonlinearSolver", 1)) return(1);
-
-    IDASetMaxNumSteps(mem, pow(10, 15));
-
-
-    //IDASetInitStep(mem, pow(10, -7));
-
-    //IDASetMaxOrd(mem, 1);
-    //IDASetInitStep(mem, pow(10, -7));
-    //tout = RCONST(0.0000000000000001);
-    retval = IDASetId(mem, id);
-    if (check_retval(&retval, "IDASetId", 1)) return(1);
-    /* In loop, call IDASolve, print results, and test for error.
-        Break out of loop when NOUT preset output times have been reached. */
-
-    iout = 0;
-    tout = 1.e-4;
-    double tout1 = tout;
-    int iend = 2000000;
-    int number = 1;
-    ofstream fout;
-    ofstream foutw;
-    double Y_H2, Y_O2;
-    double W, w_dot;
-    double sum_Y = 0;
-    double alpha = 1;
-
-   /* retval = IDACalcIC(mem, 2, tout);
-    if (check_retval(&retval, "IDACalcIC", 1)) return(1);*/
-    //corrector = 0;
-    data->N_m = 0;
-    //IDASetMaxStep(mem, tout/10);
-    while (iout < 10) {
-        retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
-        if (check_retval(&retval, "IDASolve", 1)) return(1);
-        iout++;
-        tout += tout1;
-        if (iout % 1 == 0) {
-            for (int i = 1; i < Nx - 1; i++) {
-                if (i < preinter + 1) {
-                    Cell_Properties_vector[i].T = yval[i - 1];
-                }
-                if (i == preinter + 1) {
-                    Cell_Properties_inter.T = yval[i - 1];
-                    Cell_Properties_vector[i].T = yval[i];
-                }
-                if (i > preinter + 1) {
-                    Cell_Properties_vector[i].T = yval[i];
-                }
-            }
-            Cell_Properties_vector[0].T = Cell_Properties_vector[1].T;
-            Cell_Properties_vector[Nx - 1].T = Cell_Properties_vector[Nx - 2].T;
-            Write_to_file(to_string(tout * pow(10, 2)) + "_IDaIC", "yval", Cell_Properties_vector, Cell_Properties_inter);
-        }
-       
-    }
-
-    cout << "\nFinal Statistics:\n";
-    retval = IDAPrintAllStats(mem, stdout, SUN_OUTPUTFORMAT_TABLE);
-    /*Write_to_file2("detail/detail" + to_string(iter), f_ida, x_vect,
-                            T_vect, Y_vect, Yp_vect, M, N_x, 1);*/
-                            /* Free memory */
-    free(data);
-    IDAFree(&mem);
-    SUNNonlinSolFree(NLS);
-    SUNLinSolFree(LS);
-    SUNMatDestroy(A);
-    N_VDestroy(avtol);
-    N_VDestroy(yy);
-    N_VDestroy(yp);
-    N_VDestroy(cons);
-    SUNContext_Free(&ctx);
-    return(retval);
-}
-
-static int funcT_IDA(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data)
-{
-    realtype* yval, * ypval, * rval;
-    UserData data;
-    double Temp;
-    double M;
-    double sumY = 0;
-    data = (UserData)user_data;
-    int j;
-    yval = N_VGetArrayPointer(yy);
-    ypval = N_VGetArrayPointer(yp);
-    rval = N_VGetArrayPointer(rr);
-    double rho = get_rho(Yi, data->Tl, 'g');
-    double Vc = 0;
-    int i_temp = 0;
-
-    int i_T, i_u, i_vel_interf, di_l, di_r, i_inter_T;
-    double T_prev, T_curr, T_next;
-    double u_prev, u_curr, u_next;
-    double rho_prev, rho_curr, rho_next;
-    double vel_prev, vel_curr, vel_next;
-
-    double T_inter, T_inter_2l, T_inter_3l, T_inter_2r, T_inter_3r;
-    double u_inter_prev, u_inter_curr, u_inter_next;
-    double vel_interf_curr, vel_interf_prev, vel_interf_next;
-    double vel_inter;
-    double step;
-
-    int retval = IDAGetCurrentStep(data->sun_mem, &step);
-    check_retval(&retval, "IDAGetCurrentStep", 1);
-    /* retval = IDAGetJacTime(mem, &tj);
-     check_retval(&retval, "IDAGetJacTime", 1);*/
-
-    double tprev = data->t;
-    data->t = tres;
-    if (vizov % 100 == 0) {
-        cout << "tres = " << tres << "\n";
-        cout << "p_inter = " << p_inter << "\n\n";
-    }
-    double dt = tres - tprev;
-    double h = x_vect[preinter + 1] - x_vect[preinter];
-    double rho_inter;
-    //cout << "r inter = " << x_vect[preinter] + (p_inter - 1) * h << "\n";
-    //cout << "corector = " << corector << "\n";
-    //cout << "p inter = " << p_inter << "\n";
-    for (int i = 1; i < Nx - 1; i++) {
-        if (i < preinter + 1) {
-            Cell_Properties_vector[i].T = yval[i - 1];
-        }
-        if (i == preinter + 1) {
-            Cell_Properties_inter.T = yval[i - 1];
-            Cell_Properties_vector[i].T = yval[i];
-        }
-        if (i > preinter + 1) {
-            Cell_Properties_vector[i].T = yval[i];
-        }
-    }
-    T_inter = Cell_Properties_inter.T;
-    u_inter = 0;
-    vel_inter = Cell_Properties_inter.vel;
-    Y_inter = Cell_Properties_inter.Y.data();
-    rho_inter = get_rho(Y_inter, T_inter, 'g');
-    Cell_Properties_vector[0].T = Cell_Properties_vector[1].T;
-    Cell_Properties_vector[Nx - 1].T = Cell_Properties_vector[Nx - 2].T;
-
-    for (int i = 1; i < Nx - 1; i++) {
-
-        Yiprev = Cell_Properties_vector[i - 1].Y.data();
-        Yi = Cell_Properties_vector[i].Y.data();
-        Yinext = Cell_Properties_vector[i + 1].Y.data();
-
-        T_prev = Cell_Properties_vector[i - 1].T;
-        T_curr = Cell_Properties_vector[i].T;
-        T_next = Cell_Properties_vector[i + 1].T;
-
-        u_prev = 0;
-        u_curr = 0;
-        u_next = 0;
-
-        //cout << "in func i = " << i << "\n";
-        //cout << "M = " << data->M << "\n\n";
-
-        Get_molar_cons(Xi, Cell_Properties_vector[i].Y.data(), Cell_Properties_vector[i].T);
-       /* chem_vel(Sn, Hn, forward_arr, reverse_arr, equilib_arr,
-            Cell_Properties_vector[i].T, Xi, ydot, i);*/
-        Get_mole_fr(Xiprev, Cell_Properties_vector[i - 1].Y.data()); Get_mole_fr(Xi, Cell_Properties_vector[i].Y.data()); Get_mole_fr(Xinext, Cell_Properties_vector[i + 1].Y.data());
-        Get_mole_fr(Xi_2, Cell_Properties_vector[preinter + 2].Y.data()); Get_mole_fr(Xi_3, Cell_Properties_vector[preinter + 3].Y.data()); Get_mole_fr(X_inter, Cell_Properties_inter.Y.data());
-
-        if (i < preinter) {
-            //cout << "<preinter\n";
-            double h = x_vect[preinter] - x_vect[preinter - 1];
-            r_inter = x_vect[preinter] + (p_inter - 1) * h;
-
-            double rho = get_rho(Yi, T_curr, 'd');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
-
-            rval[i - 1] = ypval[i - 1] - F_right_T_d(data,
-                T_prev, T_curr, T_next,
-                x_vect[i - 1], x_vect[i], x_vect[i + 1],
-                u_prev, u_curr, u_next, i) / rho / Cp;
-            cout << " rval  < pre = " << rval[i - 1] << "\n";
-            cout << " yval  < pre = " << yval[i - 1] << "\n\n";
-        }
-
-        if (i == preinter) {
-            //cout << "\n\n\npreinter\n"; 
-            T_inter_2l = Cell_Properties_vector[preinter - 1].T;
-            T_inter_3l = Cell_Properties_vector[preinter - 2].T;
-            double h = x_vect[preinter] - x_vect[preinter - 1];
-            r_inter = x_vect[preinter] + (p_inter - 1) * h;
-
-            double rho = get_rho(Yi, T_curr, 'd');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'd');
-
-            rval[i - 1] = ypval[i - 1] - F_right_T_interfase_l(X_inter,
-                T_inter_3l, T_inter_2l,
-                T_curr, T_inter, x_vect[i - 1], x_vect[i], r_inter, h, p_inter) / rho / Cp;
-            cout << " rval  pre  = " << rval[i - 1] << "\n";
-            cout << " yval  pre  = " << yval[i - 1] << "\n\n";
-        }
-
-        if (i == preinter + 1) {
-            //cout << "\n\n\npreinter + 1\n";
-
-            T_inter_2l = Cell_Properties_vector[preinter - 1].T;
-            T_inter_3l = Cell_Properties_vector[preinter - 2].T;
-            T_inter_2r = Cell_Properties_vector[preinter + 2].T;
-            T_inter_3r = Cell_Properties_vector[preinter + 3].T;
-            u_inter_2r = Cell_Properties_vector[preinter + 2].u;
-            u_inter_3r = Cell_Properties_vector[preinter + 3].u;
-            double rho_inter_2r = Cell_Properties_vector[preinter + 2].rho;
-            double rho_inter_3r = Cell_Properties_vector[preinter + 3].rho;
-
-            rval[i - 1] = F_right_T_interfase(X_inter, T_inter_3l, T_inter_2l, T_inter, T_inter_2r,
-                T_inter_3r, vel_inter, r_inter, h, p_inter);
-            cout << " rval interf = " << rval[i - 1] << "\n";
-            cout << " yval interf = " << yval[i - 1] << "\n\n";
-
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
-            double rho = get_rho(Yi, T_curr, 'g');
-
-            rval[i] = ypval[i] - F_right_T_interfase_r(X_inter,
-                T_inter, T_curr, T_inter_2r, T_inter_3r,
-                u_curr, r_inter, x_vect[i], x_vect[i + 1],
-                h, p_inter) / rho / Cp;
-            cout << " rval pre + 1= " << rval[i] << "\n";
-            cout << " yval pre + 1= " << yval[i] << "\n\n";
-        }
-
-
-        if (i > preinter + 1) {
-            double rho = get_rho(Yi, T_curr, 'g');
-            double Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
-
-            double dTdt = F_right_T_g(data,
-                T_prev, T_curr, T_next,
-                x_vect[i - 1], x_vect[i], x_vect[i + 1],
-                u_prev, u_curr, u_next, i) / rho / Cp;
-
-            rval[i] = ypval[i] - dTdt;
-            cout << " rval > pre + 1= "  << rval[i] << "\n";
-            cout << " rval > pre + 1= " << yval[i] << "\n\n";
-        }
-    }
-    /* Write_to_file("detail\\" + to_string(vizov) + "_" + to_string(tres * pow(10, 12)) + "_yval", "yval", Cell_Properties_vector, Cell_Properties_inter);
-     Write_to_file("detail\\" + to_string(vizov) + "_" + to_string(tres * pow(10, 12)) + "_ypval", "ypval", Cell_prouds_vector, Cell_prouds_inter);
-     Write_to_file("detail\\" + to_string(vizov) + "_" + to_string(tres * pow(10, 12)) + "_rval", "rval", Cell_rval_vector, Cell_rval_inter);*/
-    return 0;
-}
 
 int KinSetIc(int NEQ)
 {
@@ -2746,8 +1890,6 @@ int KinSetIc(int NEQ)
         Cell_Properties_vector[i].vel = Cell_Properties_inter.vel;
 
     }
-
-    KINGetFuncNorm(kmem, norm);
     N_VDestroy(res_vect);
     N_VDestroy(s);
     N_VDestroy(c);
@@ -2952,135 +2094,5 @@ static int func_kinsol(N_Vector u, N_Vector f, void* user_data)
                 x_vect[i - 1], x_vect[i], x_vect[i + 1], yval[i_yval - 1], yval[i_yval], yval[i_yval + 1], i);
         }
     }
-    return 0;
-}
-
-
-
-int KinSet_T_inter(int NEQ)
-{
-    SUNContext sunctx;
-    realtype fnormtol, scsteptol;
-    N_Vector res_vect, s, c;
-    int glstr, mset, retval;
-    void* kmem;
-    SUNMatrix J;
-    SUNLinearSolver LS;
-    realtype* yval, * cval, * sval;
-    UserData data;
-    data = (UserData)malloc(sizeof * data);
-    res_vect = NULL;
-    s = c = NULL;
-    kmem = NULL;
-    J = NULL;
-    LS = NULL;
-    /* Create the SUNDIALS context that all SUNDIALS objects require */
-    retval = SUNContext_Create(NULL, &sunctx);
-    if (check_retval(&retval, "SUNContext_Create", 1)) return(1);
-    res_vect = N_VNew_Serial(NEQ, sunctx);
-    if (check_retval((void*)res_vect, "N_VNew_Serial", 0)) return(1);
-
-    s = N_VNew_Serial(NEQ, sunctx);
-    if (check_retval((void*)s, "N_VNew_Serial", 0)) return(1);
-
-    c = N_VNew_Serial(NEQ, sunctx);
-    if (check_retval((void*)c, "N_VNew_Serial", 0)) return(1);
-
-    N_VConst(ONE, s); /* no scaling */
-
-    yval = N_VGetArrayPointer(res_vect);
-    cval = N_VGetArrayPointer(c);
-    sval = N_VGetArrayPointer(s);
-
-    yval[0] = Cell_Properties_inter.T;
-    cval[0] = 1.0;
-    sval[0] = pow(10, 0);
-    fnormtol = FTOL * pow(10, -5); scsteptol = STOL * pow(10, -3);
-
-
-    kmem = KINCreate(sunctx);
-    if (check_retval((void*)kmem, "KINCreate", 0)) return(1);
-
-    retval = KINSetUserData(kmem, data);
-    if (check_retval(&retval, "KINSetUserData", 1)) return(1);
-    retval = KINSetConstraints(kmem, c);
-    if (check_retval(&retval, "KINSetConstraints", 1)) return(1);
-    retval = KINSetFuncNormTol(kmem, fnormtol);
-    if (check_retval(&retval, "KINSetFuncNormTol", 1)) return(1);
-    retval = KINSetScaledStepTol(kmem, scsteptol);
-    if (check_retval(&retval, "KINSetScaledStepTol", 1)) return(1);
-    KINSetNumMaxIters(kmem, 1000);
-    retval = KINInit(kmem, func_kinsol_T, res_vect);
-    if (check_retval(&retval, "KINInit", 1)) return(1);
-
-    J = SUNDenseMatrix(NEQ, NEQ, sunctx);
-    if (check_retval((void*)J, "SUNBandMatrix", 0)) return(1);
-
-    /* Create banded SUNLinearSolver object */
-    LS = SUNLinSol_Dense(res_vect, J, sunctx);
-    if (check_retval((void*)LS, "SUNLinSol_Band", 0)) return(1);
-
-    /* Attach the matrix and linear solver to KINSOL */
-    retval = KINSetLinearSolver(kmem, LS, J);
-    if (check_retval(&retval, "KINSetLinearSolver", 1)) return(1);
-    data->sun_mem = kmem;
-    glstr = 0;
-    mset = 1000;
-
-    retval = KINSol(kmem, res_vect, glstr, s, s);
-    Cell_Properties_inter.T = yval[0];
-    cout << " Cell_Properties_inter.T = " << Cell_Properties_inter.T << "\n";
-    if (check_retval(&retval, "KINSol", 1)) return(1);
-    /* Free memory */
-    data->sun_mem = NULL;
-    retval = KINPrintAllStats(kmem, stdout, SUN_OUTPUTFORMAT_TABLE);
-    KINGetFuncNorm(kmem, norm);
-    N_VDestroy(res_vect);
-    N_VDestroy(s);
-    N_VDestroy(c);
-    KINFree(&kmem);
-    SUNLinSolFree(LS);
-    SUNMatDestroy(J);
-    free(data);
-    SUNContext_Free(&sunctx);
-    return 0;
-}
-
-static int func_kinsol_T(N_Vector u, N_Vector f, void* user_data)
-{
-    realtype* yval, * ypval, * rval;
-    UserData data;
-    data = (UserData)user_data;
-    yval = N_VGetArrayPointer(u);
-    rval = N_VGetArrayPointer(f);
-    double T_inter_2l = Cell_Properties_vector[preinter - 1].T;
-    double T_inter_3l = Cell_Properties_vector[preinter - 2].T;
-    double T_inter_2r = Cell_Properties_vector[preinter + 2].T;
-    double T_inter_3r = Cell_Properties_vector[preinter + 3].T;
-    double u_inter_2r = Cell_Properties_vector[preinter + 2].u;
-    double u_inter_3r = Cell_Properties_vector[preinter + 3].u;
-    double rho_inter_2r = Cell_Properties_vector[preinter + 2].rho;
-    double rho_inter_3r = Cell_Properties_vector[preinter + 3].rho;
-
-    double T_inter = yval[0];
-    double u_inter = 0;
-    double vel_inter = Cell_Properties_inter.vel;
-
-    double mol_w = my_mol_weight(komponents[Fuel]);
-
-    double W = get_W(Cell_Properties_inter.Y.data());
-    double h = x_vect[preinter] - x_vect[preinter - 1];
-    double rho_inter = get_rho(Cell_Properties_inter.Y.data(), T_inter, 'g');
-    int i = preinter + 1;
-
-    r_inter = x_vect[preinter] + (p_inter - 1) * h;
-    Y_inter = Cell_Properties_inter.Y.data();
-    Get_mole_fr(Xiprev, Cell_Properties_vector[i - 1].Y.data()); Get_mole_fr(Xi, Cell_Properties_vector[i].Y.data()); Get_mole_fr(Xinext, Cell_Properties_vector[i + 1].Y.data());
-    Get_mole_fr(Xi_2, Cell_Properties_vector[preinter + 2].Y.data()); Get_mole_fr(Xi_3, Cell_Properties_vector[preinter + 3].Y.data()); Get_mole_fr(X_inter, Cell_Properties_inter.Y.data());
-
-    
-    rval[0] = F_right_T_interfase(X_inter, T_inter_3l, T_inter_2l, T_inter, T_inter_2r,
-        T_inter_3r, vel_inter, r_inter, h, p_inter);
-   
     return 0;
 }
