@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\stringFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\element.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\transport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\species.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\thermo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\reaction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\thermoParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\transportParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\reactionParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\chemkinReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Storage\Daniil\gorenie\ChemKin_reader\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6F820799-9001-31C8-84F9-A3595736A814}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

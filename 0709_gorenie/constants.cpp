@@ -74,7 +74,6 @@ extern double* YkVk_res;
 
 
 void init_consts(int& num_gas_species, int& num_react) {
-    std::string name_file = R"(D:\Storage\Daniil\n-heptane-tran.out)";
     std::string cond_str = "CONDUCTIVITIES";
     std::string visc_str = "VISCOSITIES";
     std::string diff_str = "DIFFUSION";

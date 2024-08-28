@@ -1,0 +1,3 @@
+D:/Storage/Daniil/gorenie/ChemKin_reader/src/CMakeFiles/chemkinReader.dir
+D:/Storage/Daniil/gorenie/ChemKin_reader/src/CMakeFiles/ALL_BUILD.dir
+D:/Storage/Daniil/gorenie/ChemKin_reader/src/CMakeFiles/ZERO_CHECK.dir

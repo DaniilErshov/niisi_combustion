@@ -1,0 +1,7 @@
+ELEMENTS  H   O   N  AR END
+
+SPECIES H2 O2 N2 END
+
+REACTIONS
+H2+O2+N2=H2+O2+N2                         1.04E14    0.0     1.529E04
+END

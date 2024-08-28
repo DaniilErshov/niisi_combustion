@@ -1,0 +1,2 @@
+VARIABLES= "t, s", "D^2", "Mdot", "Qd, J/(s*cm<sup>2", "Qg, J/(s*cm<sup>2", "vel, cm/s", "Mass", "p_inter"
+TITLE="Graphics"
