@@ -629,19 +629,6 @@ void Make_Xvector(UserData data, double* Y, double* X_mol, int myNx, int i) {
 
 void makeYstart(double koeff_topl, string fuel, double O2_in, double N2_in, double* Ystart) {
 
-    /* Ystart[0] = koeff_topl * 2.0 / (koeff_topl * 2. + 1. + 3.76);
-     Ystart[2] = 1.0 / (koeff_topl * 2. + 1. + 3.76);
-     Ystart[8] = 3.76 / (koeff_topl * 2. + 1. + 3.76);
-     double Wsmes = 0;
-
-     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-         Wsmes += Ystart[k_spec] * phyc.mol_weight[k_spec];
-     }
-
-     for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
-         Ystart[k_spec] *= phyc.mol_weight[k_spec] / Wsmes;
-         cout << "Yi = " << Ystart[k_spec] << "\n";
-     }*/
     double n = 7;
     double m = 16;
     double koeff_O2 = (n + 0.25 * m);
@@ -1020,26 +1007,21 @@ int integrate_All_IDA_M(int N_x) {
             double Cp = get_Cp(num_gas_species, Yi, T_inter, 'g');
             for (int k_spec = 0; k_spec < num_gas_species; k_spec++) {
                 ypval[i_temp] = 0;
-                //cout << "i_temp Y initial inter = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
                 Cell_prouds_inter.Y[k_spec] = ypval[i_temp];
                 i_temp++;
             }
 
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
             ypval[i_temp] = 0;
             Cell_prouds_inter.T = ypval[i_temp];
-            //cout << "i_temp  T initial inter = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
             Cell_prouds_inter.u = ypval[i_temp];
-            //cout << "i_temp u initial inter = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
             Cell_prouds_inter.vel = ypval[i_temp];
 
-            //cout << "i_temp vel initial inter = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
@@ -1100,27 +1082,22 @@ int integrate_All_IDA_M(int N_x) {
                     u_prev, u_curr, u_next, i) / rho;
                 Cell_prouds_vector[i].Y[k_spec] = ypval[i_temp];
 
-                //cout << "i_temp Y initial last = " << i_temp << " Y  = " << rho * ypval[i_temp] << "\n";
                 i_temp++;
             }
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n";
             ypval[i_temp] = F_right_T_g(data,
                 T_prev, T_curr, T_next,
                 x_vect[i - 1], x_vect[i], x_vect[i + 1],
                 u_prev, u_curr, u_next, i) / rho / Cp;
             Cell_prouds_vector[i].T = ypval[i_temp];
-            //cout << "i_temp  T initial last = " << i_temp << " = " << rho * Cp * ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
             Cell_prouds_vector[i].u = ypval[i_temp];
-            //cout << "i_temp u initial last = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
             Cell_prouds_vector[i].vel = ypval[i_temp];
 
-            //cout << "i_temp vel initial last = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
