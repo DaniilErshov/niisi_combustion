@@ -124,7 +124,7 @@ int main()
 
 
     InitialData(N_x, x_vect, Cell_Properties_vector, Tbegin, Tend, Ystart, Yend);
-    Write_to_file("initial", "val", Cell_Properties_vector, Cell_Properties_inter);
+    Write_to_file("initial\\initial", "val", Cell_Properties_vector, Cell_Properties_inter);
 
     double t_Y = pow(10, -7), t_full = pow(10, -10);
     KinSetIc(3 + num_gas_species + (Nx - preinter - 2));
@@ -145,7 +145,7 @@ int main()
     KinSetIc(3 + num_gas_species + (Nx - preinter - 2));
     vel_prev = 0;
     ofstream setka;
-    setka.open("setka.dat");
+    setka.open("params\\setka.dat");
     setka << R"(VARIABLES= "r, cm", "h, cm")";
     setka << "TITLE=\"" << "Graphics" << "\"" << endl;
     for (int i = 1; i < N_x; i++)
@@ -155,7 +155,7 @@ int main()
     setka.close();
 
 
-    Write_to_file("initial2", "val", Cell_Properties_vector, Cell_Properties_inter);
+    Write_to_file("initial\\initial2", "val", Cell_Properties_vector, Cell_Properties_inter);
     integrate_All_IDA_M(N_x);
 
 

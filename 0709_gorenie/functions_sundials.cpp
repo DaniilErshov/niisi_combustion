@@ -1058,52 +1058,33 @@ int integrate_All_IDA_M(int N_x) {
                     r_inter, x_vect[i], x_vect[i + 1],
                     u_inter, u_curr, u_next, i) / rho;
                 Cell_prouds_vector[i].Y[k_spec] = ypval[i_temp];
-                //cout << "i_temp Y initial pre+1  = " << i_temp << " Y  = " <<  ypval[i_temp] << "\n";
                 i_temp++;
             }
 
 
             Cp = get_Cp(num_gas_species, Yi, T_curr, 'g');
-            //cout << "i_temp = " << i_temp << " T  = " << yval[i_temp] << "\n\n";
             ypval[i_temp] = F_right_T_interfase_r(X_inter,
                 T_inter, T_curr, T_inter_2r, T_inter_3r,
                 u_curr, r_inter, x_vect[i], x_vect[i + 1],
                 h, p_inter) / rho / Cp;
             Cell_prouds_vector[i].T = ypval[i_temp];
 
-            //cout << "i_temp  T initial pre+1 = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
-            //    F_right_u_inter_r(data,
-            //    T_inter, T_curr, T_inter_2r,
-            //    u_inter, u_curr, u_inter_2r, u_inter_3r, h, p_inter);
-            //Cell_prouds_vector[i].u = ypval[i_temp];
-
-            //cout << "i_temp u initial pre+1 = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
             ypval[i_temp] = 0;
             Cell_prouds_vector[i].vel = ypval[i_temp];
-
-           // cout << "i_temp vel initial pre+1  = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
-            //ypval[i_temp] = F_right_rho_inter_r(data, rho_inter, rho_curr, rho_inter_2r, rho_inter_3r,
-            //    u_inter, u_curr, u_inter_2r, u_inter_3r, x_vect[i - 1], x_vect[i], x_vect[i + 1], p_inter);
-           // ypval[i_temp] = F_right_u_inter_r(data, T_inter, T_curr, T_inter_2r, u_inter, u_curr, u_inter_2r, u_inter_3r, h, p_inter);
             ypval[i_temp] = 0;
-            // ypval[i_temp] = 0.0;
             Cell_prouds_vector[i].rho = ypval[i_temp];
-            //cout << "i_temp rho pre+1  = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
         }
 
 
         if (i > preinter + 1) {
-            //cout << "T_prev" << T_prev << "\n";
-            //cout << "T_curr" << T_curr << "\n";
-            //cout << "T_next" << T_next << "\n\n";
 
             find_diff_slag(data, T_curr, T_next, Yi, Yinext, Xi, Xinext, YkVk_r, Y_tmp_r, X_tmp_r, gradX_r, data->rho_r, data->Vc_r, i, 'r');
 
@@ -1132,8 +1113,6 @@ int integrate_All_IDA_M(int N_x) {
             i_temp++;
 
             ypval[i_temp] = 0;
-                //F_right_u(data, T_prev, T_curr, T_next, x_vect[i - 1], x_vect[i], x_vect[i + 1],
-                //u_prev, u_curr, u_next, i);
             Cell_prouds_vector[i].u = ypval[i_temp];
             //cout << "i_temp u initial last = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
@@ -1144,13 +1123,9 @@ int integrate_All_IDA_M(int N_x) {
             //cout << "i_temp vel initial last = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
 
-            //ypval[i_temp] = F_right_rho(data, rho_prev, rho_curr, rho_next, x_vect[i - 1], x_vect[i], x_vect[i + 1],
-            //    u_prev, u_curr, u_next, i);
             ypval[i_temp] = 0;
-            //ypval[i_temp] = 0.0;
             Cell_prouds_vector[i].rho = ypval[i_temp];
 
-            //cout << "i_temp rho initial = " << i_temp << " = " << ypval[i_temp] << "\n";
             i_temp++;
         }
     }
@@ -1203,7 +1178,7 @@ int integrate_All_IDA_M(int N_x) {
 
     data->N_m = 0;
     ofstream params;
-    params.open("params.dat");
+    params.open("params\\params.dat");
     params << R"(VARIABLES= "t, s", "D^2", "Mdot", "Qd, J/(s*cm<sup>2", "Qg, J/(s*cm<sup>2", "vel, cm/s", "Mass", "p_inter")" << endl;
     params << "TITLE=\"" << "Graphics" << "\"" << endl;
     double r0 = r_inter;
@@ -1339,8 +1314,6 @@ static int func_All_IDA_M(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, 
 
         vel_interf_curr = Cell_Properties_vector[i].vel;
 
-        //cout << "in func i = " << i << "\n";
-        //cout << "M = " << data->M << "\n\n";
 
         if (i > preinter)
         {
